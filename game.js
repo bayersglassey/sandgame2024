@@ -2,6 +2,10 @@
 
 var FRAMERATE = 30;
 
+// Key codes
+var KEYCODE_SHIFT = 16;
+var KEYCODE_CONTROL = 17;
+
 
 function rgba(r, g, b, a) {
     var uint8 = new Uint8ClampedArray([r, g, b, a]);
@@ -37,42 +41,61 @@ class SandGame {
         this.pixels.fill(NOTHING);
         this.pixels_next.fill(NOTHING);
 
+        this.keydown = {};
+        this.mousedown = false;
+        this.mouse_x = 0;
+        this.mouse_y = 0;
+
         canvas.width = width;
         canvas.height = height;
         canvas.style.width = width * zoom;
         canvas.style.height = height * zoom;
-        canvas.addEventListener('click', this.onclick.bind(this));
+        window.addEventListener('keydown', this.onkeydown.bind(this));
+        window.addEventListener('keyup', this.onkeyup.bind(this));
+        canvas.addEventListener('mousedown', this.onmousedown.bind(this));
+        canvas.addEventListener('mouseup', this.onmouseup.bind(this));
+        canvas.addEventListener('mousemove', this.onmousemove.bind(this));
     }
 
-    onclick(event) {
-        var tx = Math.floor(event.offsetX / this.zoom);
-        var ty = Math.floor(event.offsetY / this.zoom);
-        if (event.shiftKey) {
+    onkeydown(event) { this.keydown[event.keyCode] = true; }
+    onkeyup(event) { this.keydown[event.keyCode] = false; }
+    onmousedown(event) { this.mousedown = true; this.mousemove(event); this.dropstuff(); }
+    onmouseup(event) { this.mousedown = false; }
+    onmousemove(event) { this.mousemove(event); if (this.mousedown) { this.dropstuff(); } }
+    mousemove(event) {
+        this.mouse_x = Math.floor(event.offsetX / this.zoom);
+        this.mouse_y = Math.floor(event.offsetY / this.zoom);
+    }
+
+    dropstuff() {
+        var mx = this.mouse_x;
+        var my = this.mouse_y;
+        if (this.keydown[KEYCODE_SHIFT]) {
             // Make STONE
-            if (event.ctrlKey) {
-                var x0 = tx - 3;
-                var x1 = tx + 3;
-                var y = ty;
+            if (this.keydown[KEYCODE_CONTROL]) {
+                var x0 = mx - 3;
+                var x1 = mx + 3;
+                var y = my;
                 for (var x = x0; x <= x1; x++) {
                     this.set_pixel(x, y, STONE);
                 }
             } else {
                 var height = this.height;
-                for (var y = ty; y < height; y++) {
-                    this.set_pixel(tx, y, STONE);
+                for (var y = my; y < height; y++) {
+                    this.set_pixel(mx, y, STONE);
                 }
             }
         } else {
             // Make SAND
-            if (event.ctrlKey) {
-                var x0 = tx - 3;
-                var x1 = tx + 3;
-                var y = ty;
+            if (this.keydown[KEYCODE_CONTROL]) {
+                var x0 = mx - 3;
+                var x1 = mx + 3;
+                var y = my;
                 for (var x = x0; x <= x1; x++) {
                     this.set_pixel(x, y, SAND);
                 }
             } else {
-                this.set_pixel(tx, ty, SAND);
+                this.set_pixel(mx, my, SAND);
             }
         }
     }
@@ -99,6 +122,8 @@ class SandGame {
     }
 
     step() {
+        if (this.mousedown) { this.dropstuff(); }
+
         // Game physics!
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
