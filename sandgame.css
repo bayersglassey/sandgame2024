@@ -1,12 +1,6 @@
 
 #sandgame {
-    display: inline-block;
+    display: block;
+    margin: auto;
     border: solid 1px black;
 }
-
-.pixel {
-    display: inline-block;
-    width: 2px;
-    height: 2px;
-}
-

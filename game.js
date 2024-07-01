@@ -3,9 +3,21 @@
 var FRAMERATE = 30;
 
 
-var NOTHING = 'white';
-var SAND = 'brown';
-var STONE = 'grey';
+function rgba(r, g, b, a) {
+    var uint8 = new Uint8ClampedArray([r, g, b, a]);
+    var uint32 = new Uint32Array(uint8.buffer);
+    return uint32[0];
+}
+
+
+function rgb(r, g, b) {
+    return rgba(r, g, b, 255);
+}
+
+
+var NOTHING = rgb(255, 255, 255);
+var SAND = rgb(170, 130, 70);
+var STONE = rgb(120, 120, 120);
 
 
 function is_solid(pixel) {
@@ -14,54 +26,39 @@ function is_solid(pixel) {
 
 
 class SandGame {
-    constructor(width, height, pixels_div) {
+    constructor(width, height, canvas) {
         this.width = width;
         this.height = height;
-        this.pixels_div = pixels_div;
-        this.pixel_elems = this.make_grid();
-        this.pixels = new Array(width * height);
-        this.pixels_next = new Array(width * height);
+        this.canvas = canvas;
+
+        this.pixels = new Uint32Array(width * height);
+        this.pixels_next = new Uint32Array(width * height);
         this.pixels.fill(NOTHING);
         this.pixels_next.fill(NOTHING);
+
+        canvas.width = width;
+        canvas.height = height;
+        canvas.addEventListener('click', this.onclick.bind(this));
     }
 
-    make_grid() {
-        var pixel_elems = [];
-        var div = this.pixels_div;
-        for (var y = 0; y < this.height; y++) {
-            if (y > 0) {
-                var br = document.createElement('br');
-                div.appendChild(br);
+    onclick(event) {
+        var tx = event.offsetX;
+        var ty = event.offsetY;
+        if (event.shiftKey) {
+            var height = this.height;
+            for (var y = ty; y < height; y++) {
+                this.set_pixel(tx, y, STONE);
             }
-            for (var x = 0; x < this.width; x++) {
-                var pixel_elem = document.createElement('span');
-                pixel_elem.className = 'pixel';
-                pixel_elem.style.background = 'pink';
-                div.appendChild(pixel_elem);
-                pixel_elems.push(pixel_elem);
-                pixel_elem.x = x;
-                pixel_elem.y = y;
-                pixel_elem.addEventListener('click', event => {
-                    var pixel_elem = event.target;
-                    if (event.shiftKey) {
-                        var height = this.height;
-                        for (var y = pixel_elem.y; y < height; y++) {
-                            this.set_pixel(pixel_elem.x, y, STONE);
-                        }
-                    } else if (event.ctrlKey) {
-                        var x0 = pixel_elem.x - 3;
-                        var x1 = pixel_elem.x + 3;
-                        var y = pixel_elem.y;
-                        for (var x = x0; x <= x1; x++) {
-                            this.set_pixel(x, y, SAND);
-                        }
-                    } else {
-                        this.set_pixel(pixel_elem.x, pixel_elem.y, SAND);
-                    }
-                });
+        } else if (event.ctrlKey) {
+            var x0 = tx - 3;
+            var x1 = tx + 3;
+            var y = ty;
+            for (var x = x0; x <= x1; x++) {
+                this.set_pixel(x, y, SAND);
             }
+        } else {
+            this.set_pixel(tx, ty, SAND);
         }
-        return pixel_elems;
     }
 
     get_pixel(x, y) {
@@ -79,12 +76,10 @@ class SandGame {
     }
 
     render() {
-        var n = this.width * this.height;
-        for (var i = 0; i < n; i++) {
-            var elem = this.pixel_elems[i];
-            var pixel = this.pixels[i];
-            elem.style.background = pixel;
-        }
+        var ctx = this.canvas.getContext('2d');
+        var pixel_data = new Uint8ClampedArray(this.pixels.buffer);
+        var data = new ImageData(pixel_data, this.width, this.height);
+        ctx.putImageData(data, 0, 0);
     }
 
     step() {
@@ -132,8 +127,8 @@ class SandGame {
 
 
 window.addEventListener('load', function() {
-    var pixels_div = document.getElementById('sandgame');
-    var game = new SandGame(300, 300, pixels_div);
+    var canvas = document.getElementById('sandgame');
+    var game = new SandGame(300, 300, canvas);
     window.game = game;
     game.step();
 });
