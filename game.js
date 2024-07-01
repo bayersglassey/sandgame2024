@@ -1,10 +1,22 @@
 
 
 var FRAMERATE = 30;
+var LOG_KEYS = false;
 
 // Key codes
+function get_keycode(s) {
+    // e.g.
+    // 'a' -> 65
+    // 'A' -> 65
+    // 'B' -> 66
+    // ...etc...
+    return s.toUpperCase().charCodeAt(0);
+}
 var KEYCODE_SHIFT = 16;
 var KEYCODE_CONTROL = 17;
+var KEYCODE_SELECT1 = get_keycode('q');
+var KEYCODE_SELECT2 = get_keycode('w');
+var KEYCODE_SELECT3 = get_keycode('e');
 
 
 function rgba(r, g, b, a) {
@@ -19,9 +31,10 @@ function rgb(r, g, b) {
 }
 
 
-var NOTHING = rgb(255, 255, 255);
+var NOTHING = 0;
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
+var WATER = rgb(20, 80, 255);
 
 
 function is_solid(pixel) {
@@ -57,24 +70,39 @@ class SandGame {
         canvas.addEventListener('mousemove', this.onmousemove.bind(this));
     }
 
-    onkeydown(event) { this.keydown[event.keyCode] = true; }
+    onkeydown(event) {
+        if (LOG_KEYS) {
+            console.log('keydown', event.keyCode);
+        }
+        this.keydown[event.keyCode] = true;
+        this.dropstuff();
+    }
     onkeyup(event) { this.keydown[event.keyCode] = false; }
-    onmousedown(event) { this.mousedown = true; this.mousemove(event); this.dropstuff(); }
+    onmousedown(event) { this.mousedown = true; this.mousemove(event); }
     onmouseup(event) { this.mousedown = false; }
-    onmousemove(event) { this.mousemove(event); if (this.mousedown) { this.dropstuff(); } }
+    onmousemove(event) { this.mousemove(event); }
     mousemove(event) {
         this.mouse_x = Math.floor(event.offsetX / this.zoom);
         this.mouse_y = Math.floor(event.offsetY / this.zoom);
+        this.dropstuff();
     }
 
     dropstuff() {
         var mx = this.mouse_x, x0 = mx, x1 = mx;
         var my = this.mouse_y, y0 = my, y1 = my;
 
-        if (this.keydown[KEYCODE_SHIFT]) {
+        if (this.keydown[KEYCODE_SELECT1]) {
             var pixel = STONE;
-        } else {
+        } else if (this.keydown[KEYCODE_SELECT2]) {
             var pixel = SAND;
+        } else if (this.keydown[KEYCODE_SELECT3]) {
+            var pixel = WATER;
+        } else if (this.mousedown) {
+            // Using the keys doesn't work so well, because then you can't
+            // move the cursor with my laptop's touchpad...
+            var pixel = this.keydown[KEYCODE_SHIFT]? STONE: SAND;
+        } else {
+            return;
         }
 
         if (this.keydown[KEYCODE_CONTROL]) {
@@ -105,6 +133,13 @@ class SandGame {
         this.pixels_next[i] = value;
     }
 
+    move_pixel(x0, y0, x1, y1) {
+        var pixel0 = this.get_pixel(x0, y0);
+        var pixel1 = this.get_pixel(x1, y1);
+        this.set_pixel(x0, y0, pixel1);
+        this.set_pixel(x1, y1, pixel0);
+    }
+
     render() {
         var ctx = this.canvas.getContext('2d');
         var pixel_data = new Uint8ClampedArray(this.pixels.buffer);
@@ -119,24 +154,21 @@ class SandGame {
         for (var y = 0; y < this.height; y++) {
             for (var x = 0; x < this.width; x++) {
                 var material = this.get_pixel(x, y);
-                if (material === SAND) {
+                if (material === SAND || material == WATER) {
                     if (is_solid(this.get_pixel(x, y + 1))) {
                         if (Math.random() < .5 && !is_solid(this.get_pixel(x - 1, y + 1))) {
                             // We fall down and to the left
-                            this.set_pixel(x, y, NOTHING);
-                            this.set_pixel(x - 1, y + 1, SAND);
+                            this.move_pixel(x, y, x - 1, y + 1);
                         } else if (!is_solid(this.get_pixel(x + 1, y + 1))) {
                             // We fall down and to the right
-                            this.set_pixel(x, y, NOTHING);
-                            this.set_pixel(x + 1, y + 1, SAND);
+                            this.move_pixel(x, y, x + 1, y + 1);
                         } else {
                             // We stay right where we are!
-                            this.set_pixel(x, y, SAND);
+                            this.set_pixel(x, y, material);
                         }
                     } else{
                         // We fall straight down
-                        this.set_pixel(x, y, NOTHING);
-                        this.set_pixel(x, y + 1, SAND);
+                        this.move_pixel(x, y, x, y + 1);
                     }
                 } else if (is_solid(material)) {
                     // By default, solid materials stay where they are
