@@ -68,34 +68,25 @@ class SandGame {
     }
 
     dropstuff() {
-        var mx = this.mouse_x;
-        var my = this.mouse_y;
+        var mx = this.mouse_x, x0 = mx, x1 = mx;
+        var my = this.mouse_y, y0 = my, y1 = my;
+
         if (this.keydown[KEYCODE_SHIFT]) {
-            // Make STONE
-            if (this.keydown[KEYCODE_CONTROL]) {
-                var x0 = mx - 3;
-                var x1 = mx + 3;
-                var y = my;
-                for (var x = x0; x <= x1; x++) {
-                    this.set_pixel(x, y, STONE);
-                }
-            } else {
-                var height = this.height;
-                for (var y = my; y < height; y++) {
-                    this.set_pixel(mx, y, STONE);
-                }
-            }
+            var pixel = STONE;
         } else {
-            // Make SAND
-            if (this.keydown[KEYCODE_CONTROL]) {
-                var x0 = mx - 3;
-                var x1 = mx + 3;
-                var y = my;
-                for (var x = x0; x <= x1; x++) {
-                    this.set_pixel(x, y, SAND);
-                }
-            } else {
-                this.set_pixel(mx, my, SAND);
+            var pixel = SAND;
+        }
+
+        if (this.keydown[KEYCODE_CONTROL]) {
+            x0 -= 3;
+            x1 += 3;
+        } else if (pixel === STONE) {
+            y1 = this.height - 1;
+        }
+
+        for (var x = x0; x <= x1; x++) {
+            for (var y = y0; y <= y1; y++) {
+                this.set_pixel(x, y, pixel);
             }
         }
     }
