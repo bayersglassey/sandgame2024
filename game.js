@@ -26,9 +26,10 @@ function is_solid(pixel) {
 
 
 class SandGame {
-    constructor(width, height, canvas) {
+    constructor(width, height, zoom, canvas) {
         this.width = width;
         this.height = height;
+        this.zoom = zoom;
         this.canvas = canvas;
 
         this.pixels = new Uint32Array(width * height);
@@ -38,12 +39,14 @@ class SandGame {
 
         canvas.width = width;
         canvas.height = height;
+        canvas.style.width = width * zoom;
+        canvas.style.height = height * zoom;
         canvas.addEventListener('click', this.onclick.bind(this));
     }
 
     onclick(event) {
-        var tx = event.offsetX;
-        var ty = event.offsetY;
+        var tx = Math.floor(event.offsetX / this.zoom);
+        var ty = Math.floor(event.offsetY / this.zoom);
         if (event.shiftKey) {
             var height = this.height;
             for (var y = ty; y < height; y++) {
@@ -128,7 +131,7 @@ class SandGame {
 
 window.addEventListener('load', function() {
     var canvas = document.getElementById('sandgame');
-    var game = new SandGame(300, 300, canvas);
+    var game = new SandGame(300, 300, 2, canvas);
     window.game = game;
     game.step();
 });
