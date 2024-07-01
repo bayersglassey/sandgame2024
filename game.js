@@ -48,19 +48,32 @@ class SandGame {
         var tx = Math.floor(event.offsetX / this.zoom);
         var ty = Math.floor(event.offsetY / this.zoom);
         if (event.shiftKey) {
-            var height = this.height;
-            for (var y = ty; y < height; y++) {
-                this.set_pixel(tx, y, STONE);
-            }
-        } else if (event.ctrlKey) {
-            var x0 = tx - 3;
-            var x1 = tx + 3;
-            var y = ty;
-            for (var x = x0; x <= x1; x++) {
-                this.set_pixel(x, y, SAND);
+            // Make STONE
+            if (event.ctrlKey) {
+                var x0 = tx - 3;
+                var x1 = tx + 3;
+                var y = ty;
+                for (var x = x0; x <= x1; x++) {
+                    this.set_pixel(x, y, STONE);
+                }
+            } else {
+                var height = this.height;
+                for (var y = ty; y < height; y++) {
+                    this.set_pixel(tx, y, STONE);
+                }
             }
         } else {
-            this.set_pixel(tx, ty, SAND);
+            // Make SAND
+            if (event.ctrlKey) {
+                var x0 = tx - 3;
+                var x1 = tx + 3;
+                var y = ty;
+                for (var x = x0; x <= x1; x++) {
+                    this.set_pixel(x, y, SAND);
+                }
+            } else {
+                this.set_pixel(tx, ty, SAND);
+            }
         }
     }
 
