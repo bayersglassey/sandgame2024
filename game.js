@@ -363,29 +363,32 @@ class SandGame {
 }
 
 
-window.addEventListener('keydown', function(event) {
-    // Prevent spacebar from scrolling the damn page
-    // Based on:
-    // * https://stackoverflow.com/a/22559917
-    // * https://stackoverflow.com/a/8916697
-    var keyCode = event.keyCode;
-    if(
-        (
-            keyCode === KEYCODE_SPACE ||
-            keyCode === KEYCODE_DOWN ||
-            keyCode === KEYCODE_UP)
-        && (event.target === document.body || event.target === window)
-    ) {
-        event.preventDefault();
-    }
-});
-
-
 window.addEventListener('load', function() {
     var canvas = document.getElementById('canvas');
     var file_input = document.getElementById('file_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
+
+    window.addEventListener('keydown', function(event) {
+        // Prevent spacebar or arrow keys from scrolling the damn page
+        // Based on:
+        // * https://stackoverflow.com/a/22559917
+        // * https://stackoverflow.com/a/8916697
+        var keyCode = event.keyCode;
+        if(
+            (
+                keyCode === KEYCODE_SPACE ||
+                keyCode === KEYCODE_DOWN ||
+                keyCode === KEYCODE_UP)
+            && (
+                event.target === document.body ||
+                event.target === window ||
+                event.target === canvas
+            )
+        ) {
+            event.preventDefault();
+        }
+    });
 
     function new_game(pixels) {
         // NOTE: pixels is optional
