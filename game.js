@@ -1,4 +1,4 @@
-
+'use strict';
 
 var FRAMERATE = 30;
 var LOG_KEYS = false;
@@ -14,6 +14,11 @@ function get_keycode(s) {
 }
 var KEYCODE_SHIFT = 16;
 var KEYCODE_CONTROL = 17;
+var KEYCODE_UP = 38;
+var KEYCODE_DOWN = 40;
+var KEYCODE_LEFT = 37;
+var KEYCODE_RIGHT = 39;
+var KEYCODE_SPACE = 32;
 var KEYCODE_SELECT1 = get_keycode('q');
 var KEYCODE_SELECT2 = get_keycode('w');
 var KEYCODE_SELECT3 = get_keycode('e');
@@ -35,10 +40,124 @@ var NOTHING = 0;
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
+var SKIN = rgb(255, 150, 180);
+var CLOTHES = rgb(0, 80, 255);
 
 
 function is_solid(pixel) {
     return pixel === SAND || pixel === STONE;
+}
+
+
+class Person {
+    KEYS = 'udlrj';
+    JUMP = 25;
+    JUMP_APEX = 5;
+
+    constructor(game) {
+        this.game = game;
+        this.x = Math.round(game.width / 2);
+        this.y = Math.round(game.height - 1);
+        this.jump = 0;
+        this.height = 3;
+
+        this.keydown = {};
+        for (var key of this.KEYS) this.keydown[key] = false;
+
+        this.keymap = {
+            [KEYCODE_UP]: 'u',
+            [KEYCODE_DOWN]: 'd',
+            [KEYCODE_LEFT]: 'l',
+            [KEYCODE_RIGHT]: 'r',
+            [KEYCODE_SPACE]: 'j',
+        };
+    }
+
+    step() {
+        if (this.keydown.l && !this.keydown.r) this.move_x(-1);
+        if (this.keydown.r && !this.keydown.l) this.move_x(1);
+        if (this.keydown.j) {
+            if (this.jump) {
+                // We're holding jump, and already jumping
+                if (this.jump > this.JUMP_APEX) this.move_y(-1);
+                this.jump--;
+            } else if (this.collide(0, 1)) {
+                // We're holding jump, and on the ground
+                this.jump = this.JUMP;
+                this.move_y(-1);
+            } else {
+                // We're holding jump, and falling
+                this.move_y(1);
+            }
+        } else {
+            // We're not holding jump
+            this.jump = 0;
+            this.move_y(1);
+        }
+    }
+
+    collide(dx, dy) {
+        var width = this.game.width;
+        var height = this.game.height;
+
+        var x = this.x + dx;
+        if (x < 0 || x >= width) return true;
+
+        var pixels = this.game.pixels;
+
+        var y0 = this.y - (this.height - 1) + dy;
+        var y1 = this.y + dy;
+        for (var y = y0; y <= y1; y++) {
+            if (y < 0 || y >= height) return true;
+            var i = y * width + x;
+            if (is_solid(pixels[i])) return true;
+        }
+        return false;
+    }
+
+    move_x(dx) {
+        var dy0 = 0;
+        var dy1 = -(this.height - 1);
+        for (var dy = dy0; dy >= dy1; dy--) {
+            if (this.collide(dx, dy)) continue;
+            this.x += dx;
+            this.y += dy;
+            break;
+        }
+    }
+
+    move_y(dy) {
+        if (this.collide(0, dy)) return;
+        this.y += dy;
+    }
+
+    onkeydown(keycode) {
+        var keyname = this.keymap[keycode];
+        if (keyname) this.keydown[keyname] = true;
+    }
+
+    onkeyup(keycode) {
+        var keyname = this.keymap[keycode];
+        if (keyname) this.keydown[keyname] = false;
+    }
+
+    render_pixels() {
+        var width = this.game.width;
+        var height = this.game.height;
+
+        var x = this.x;
+        if (x < 0 || x >= width) return;
+
+        var pixels = this.game.pixels;
+
+        var y0 = this.y - (this.height - 1);
+        var y1 = this.y;
+        for (var y = y0; y <= y1; y++) {
+            if (y < 0 || y >= height) continue;
+            var i = y * width + x;
+            pixels[i] = y === y0? SKIN: CLOTHES;
+        }
+    }
 }
 
 
@@ -68,6 +187,9 @@ class SandGame {
         canvas.addEventListener('mousedown', this.onmousedown.bind(this));
         canvas.addEventListener('mouseup', this.onmouseup.bind(this));
         canvas.addEventListener('mousemove', this.onmousemove.bind(this));
+
+        this.people = [];
+        this.people.push(new Person(this));
     }
 
     onkeydown(event) {
@@ -76,8 +198,12 @@ class SandGame {
         }
         this.keydown[event.keyCode] = true;
         this.dropstuff();
+        for (var person of this.people) person.onkeydown(event.keyCode);
     }
-    onkeyup(event) { this.keydown[event.keyCode] = false; }
+    onkeyup(event) {
+        this.keydown[event.keyCode] = false;
+        for (var person of this.people) person.onkeyup(event.keyCode);
+    }
     onmousedown(event) { this.mousedown = true; this.mousemove(event); }
     onmouseup(event) { this.mousedown = false; }
     onmousemove(event) { this.mousemove(event); }
@@ -143,6 +269,7 @@ class SandGame {
     render() {
         var ctx = this.canvas.getContext('2d');
         var pixel_data = new Uint8ClampedArray(this.pixels.buffer);
+        for (var person of this.people) person.render_pixels();
         var data = new ImageData(pixel_data, this.width, this.height);
         ctx.putImageData(data, 0, 0);
     }
@@ -177,10 +304,13 @@ class SandGame {
             }
         }
 
+        // Person physics!
+        for (var person of this.people) person.step();
+
         // Switch pixels and pixels_next
-        var pixels_next = this.pixels_next;
+        var pixels = this.pixels_next;
         this.pixels_next = this.pixels;
-        this.pixels = pixels_next;
+        this.pixels = pixels;
         this.pixels_next.fill(NOTHING);
 
         // Render and continue!
@@ -192,7 +322,7 @@ class SandGame {
 
 window.addEventListener('load', function() {
     var canvas = document.getElementById('sandgame');
-    var game = new SandGame(300, 300, 2, canvas);
+    var game = new SandGame(300, 300, 3, canvas);
     window.game = game;
     game.step();
 });
