@@ -8,3 +8,16 @@ body {
     margin: auto;
     border: solid 1px black;
 }
+
+
+#controls {
+    width: 100%;
+    margin-bottom: 1em;
+    padding: 1em;
+
+    /* stop padding from breaking width: 100%.
+    See: https://stackoverflow.com/a/12034794 */
+    box-sizing: border-box;
+
+    background: #eee;
+}

@@ -365,7 +365,8 @@ class SandGame {
 
 window.addEventListener('load', function() {
     var canvas = document.getElementById('canvas');
-    var file_input = document.getElementById('file_input');
+    var save_file_input = document.getElementById('save_file_input');
+    var load_file_input = document.getElementById('load_file_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
 
@@ -393,7 +394,7 @@ window.addEventListener('load', function() {
     function new_game(pixels) {
         // NOTE: pixels is optional
         canvas.focus();
-        var game = new SandGame(300, 300, 3, canvas, pixels);
+        var game = new SandGame(300, 200, 3, canvas, pixels);
         window.game = game;
         game.step();
     }
@@ -401,6 +402,8 @@ window.addEventListener('load', function() {
     new_game();
 
     save_btn.onclick = function() {
+        var filename = save_file_input.value;
+        if (!filename) return;
         var pixels = window.game.pixels;
         var blob = new Blob([pixels.buffer],
             {type: 'application/octet-stream'});
@@ -408,13 +411,14 @@ window.addEventListener('load', function() {
         document.body.appendChild(link);
         link.href = URL.createObjectURL(blob);
         var timestamp = Number(new Date());
-        link.download = 'sandgame-' + timestamp + '.data';
+        link.download = filename;
         link.click();
         link.remove();
     }
 
     load_btn.onclick = function() {
-        if (!file_input.files || !file_input.files[0]) return;
+        var file = load_file_input.files && load_file_input.files[0];
+        if (!file) return;
         window.game.stop();
         var reader = new FileReader();
         reader.onload = function() {
@@ -422,6 +426,6 @@ window.addEventListener('load', function() {
             var pixels = new Uint32Array(buffer);
             new_game(pixels);
         }
-        reader.readAsArrayBuffer(file_input.files[0]);
+        reader.readAsArrayBuffer(file);
     }
 });
