@@ -3,7 +3,7 @@ body {
     background: #203;
 }
 
-#sandgame {
+#canvas {
     display: block;
     margin: auto;
     border: solid 1px black;

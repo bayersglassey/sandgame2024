@@ -382,7 +382,7 @@ window.addEventListener('keydown', function(event) {
 
 
 window.addEventListener('load', function() {
-    var canvas = document.getElementById('sandgame');
+    var canvas = document.getElementById('canvas');
     var file_input = document.getElementById('file_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
