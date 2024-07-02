@@ -23,6 +23,14 @@ var KEYCODE_SELECT1 = get_keycode('q');
 var KEYCODE_SELECT2 = get_keycode('w');
 var KEYCODE_SELECT3 = get_keycode('e');
 
+var KEYMAP_1 = {
+    [KEYCODE_UP]: 'u',
+    [KEYCODE_DOWN]: 'd',
+    [KEYCODE_LEFT]: 'l',
+    [KEYCODE_RIGHT]: 'r',
+    [KEYCODE_SPACE]: 'j',
+};
+
 
 function rgba(r, g, b, a) {
     var uint8 = new Uint8ClampedArray([r, g, b, a]);
@@ -52,38 +60,38 @@ function is_solid(pixel) {
 class Person {
     KEYS = 'udlrj';
     JUMP = 25;
-    JUMP_APEX = 5;
+    JUMP_HANG = 5;
 
-    constructor(game) {
+    constructor(game, keymap) {
         this.game = game;
+        this.keymap = keymap;
+
+        this.timeout_handle = null;
+
         this.x = Math.round(game.width / 2);
         this.y = Math.round(game.height - 1);
         this.jump = 0;
+        this.jump_released = true;
         this.height = 3;
 
         this.keydown = {};
         for (var key of this.KEYS) this.keydown[key] = false;
-
-        this.keymap = {
-            [KEYCODE_UP]: 'u',
-            [KEYCODE_DOWN]: 'd',
-            [KEYCODE_LEFT]: 'l',
-            [KEYCODE_RIGHT]: 'r',
-            [KEYCODE_SPACE]: 'j',
-        };
     }
 
     step() {
+        var on_ground = this.collide(0, 1);
         if (this.keydown.l && !this.keydown.r) this.move_x(-1);
         if (this.keydown.r && !this.keydown.l) this.move_x(1);
         if (this.keydown.j) {
             if (this.jump) {
                 // We're holding jump, and already jumping
-                if (this.jump > this.JUMP_APEX) this.move_y(-1);
+                if (this.jump > this.JUMP_HANG) this.move_y(-1);
                 this.jump--;
-            } else if (this.collide(0, 1)) {
-                // We're holding jump, and on the ground
+            } else if (on_ground && this.jump_released) {
+                // We're holding jump, and on the ground, and we stopped
+                // holding jump at some point since the last jump
                 this.jump = this.JUMP;
+                this.jump_released = false;
                 this.move_y(-1);
             } else {
                 // We're holding jump, and falling
@@ -91,12 +99,24 @@ class Person {
             }
         } else {
             // We're not holding jump
-            this.jump = 0;
-            this.move_y(1);
+            this.jump_released = true;
+            if (this.jump > this.JUMP_HANG) {
+                // We were moving upwards; now let's hang in mid-air for a bit
+                this.jump = this.JUMP_HANG;
+            } else if (this.jump) {
+                // We're hanging in mid-air for a bit
+                this.jump--;
+            } else {
+                // We're falling (or standing on ground)
+                this.move_y(1);
+            }
         }
     }
 
     collide(dx, dy) {
+        // Check whether we would collide with anything solid if our x, y
+        // were moved by dx, dy
+
         var width = this.game.width;
         var height = this.game.height;
 
@@ -116,6 +136,8 @@ class Person {
     }
 
     move_x(dx) {
+        // Attmpt to walk 1 pixel left/right, moving up any inclines
+        // less high than we are
         var dy0 = 0;
         var dy1 = -(this.height - 1);
         for (var dy = dy0; dy >= dy1; dy--) {
@@ -127,6 +149,7 @@ class Person {
     }
 
     move_y(dy) {
+        // Attempt to move 1 pixel up/down
         if (this.collide(0, dy)) return;
         this.y += dy;
     }
@@ -162,15 +185,19 @@ class Person {
 
 
 class SandGame {
-    constructor(width, height, zoom, canvas) {
+    constructor(width, height, zoom, canvas, pixels) {
         this.width = width;
         this.height = height;
         this.zoom = zoom;
         this.canvas = canvas;
 
-        this.pixels = new Uint32Array(width * height);
+        if (!pixels) {
+            this.pixels = new Uint32Array(width * height);
+            this.pixels.fill(NOTHING);
+        } else {
+            this.pixels = pixels;
+        }
         this.pixels_next = new Uint32Array(width * height);
-        this.pixels.fill(NOTHING);
         this.pixels_next.fill(NOTHING);
 
         this.keydown = {};
@@ -189,7 +216,7 @@ class SandGame {
         canvas.addEventListener('mousemove', this.onmousemove.bind(this));
 
         this.people = [];
-        this.people.push(new Person(this));
+        this.people.push(new Person(this, KEYMAP_1));
     }
 
     onkeydown(event) {
@@ -204,9 +231,18 @@ class SandGame {
         this.keydown[event.keyCode] = false;
         for (var person of this.people) person.onkeyup(event.keyCode);
     }
-    onmousedown(event) { this.mousedown = true; this.mousemove(event); }
-    onmouseup(event) { this.mousedown = false; }
-    onmousemove(event) { this.mousemove(event); }
+    onmousedown(event) {
+        if (event.button !== 0) return;
+        this.mousedown = true;
+        this.mousemove(event);
+    }
+    onmouseup(event) {
+        if (event.button !== 0) return;
+        this.mousedown = false;
+    }
+    onmousemove(event) {
+        this.mousemove(event);
+    }
     mousemove(event) {
         this.mouse_x = Math.floor(event.offsetX / this.zoom);
         this.mouse_y = Math.floor(event.offsetY / this.zoom);
@@ -315,14 +351,74 @@ class SandGame {
 
         // Render and continue!
         this.render();
-        setTimeout(this.step.bind(this), FRAMERATE);
+        this.timeout_handle = setTimeout(this.step.bind(this), FRAMERATE);
+    }
+
+    stop() {
+        if (this.timeout_handle !== null) {
+            clearTimeout(this.timeout_handle);
+            this.timeout_handle = null;
+        }
     }
 }
 
 
+window.addEventListener('keydown', function(event) {
+    // Prevent spacebar from scrolling the damn page
+    // Based on:
+    // * https://stackoverflow.com/a/22559917
+    // * https://stackoverflow.com/a/8916697
+    var keyCode = event.keyCode;
+    if(
+        (
+            keyCode === KEYCODE_SPACE ||
+            keyCode === KEYCODE_DOWN ||
+            keyCode === KEYCODE_UP)
+        && (event.target === document.body || event.target === window)
+    ) {
+        event.preventDefault();
+    }
+});
+
+
 window.addEventListener('load', function() {
     var canvas = document.getElementById('sandgame');
-    var game = new SandGame(300, 300, 3, canvas);
-    window.game = game;
-    game.step();
+    var file_input = document.getElementById('file_input');
+    var save_btn = document.getElementById('save_btn');
+    var load_btn = document.getElementById('load_btn');
+
+    function new_game(pixels) {
+        // NOTE: pixels is optional
+        canvas.focus();
+        var game = new SandGame(300, 300, 3, canvas, pixels);
+        window.game = game;
+        game.step();
+    }
+
+    new_game();
+
+    save_btn.onclick = function() {
+        var pixels = window.game.pixels;
+        var blob = new Blob([pixels.buffer],
+            {type: 'application/octet-stream'});
+        var link = document.createElement('a');
+        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        var timestamp = Number(new Date());
+        link.download = 'sandgame-' + timestamp + '.data';
+        link.click();
+        link.remove();
+    }
+
+    load_btn.onclick = function() {
+        if (!file_input.files || !file_input.files[0]) return;
+        window.game.stop();
+        var reader = new FileReader();
+        reader.onload = function() {
+            var buffer = reader.result;
+            var pixels = new Uint32Array(buffer);
+            new_game(pixels);
+        }
+        reader.readAsArrayBuffer(file_input.files[0]);
+    }
 });
