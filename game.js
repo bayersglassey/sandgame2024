@@ -1,6 +1,6 @@
 'use strict';
 
-var FRAMERATE = 30;
+var FRAMERATE = 15;
 var LOG_KEYS = false;
 
 // Key codes
@@ -61,11 +61,12 @@ var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
 var SKIN = rgb(255, 150, 180);
-var CLOTHES = rgb(0, 80, 255);
+var CLOTHES = rgb(0, 80, 225);
+var SOLID = [SAND, STONE, SKIN, CLOTHES];
 
 
 function is_solid(pixel) {
-    return pixel === SAND || pixel === STONE;
+    return SOLID.indexOf(pixel) >= 0;
 }
 
 
@@ -154,6 +155,14 @@ class Person {
         var dy1 = -(this.height - 1);
         for (var dy = dy0; dy >= dy1; dy--) {
             if (this.collide(dx, dy)) continue;
+
+            var x = this.x;
+            var y0 = this.y - (this.height - 1);
+            var y1 = this.y;
+            for (var y = y0; y <= y1; y++) {
+                this.game.move_pixel(x, y, x + dx, y + dy);
+            }
+
             this.x += dx;
             this.y += dy;
             break;
@@ -163,6 +172,23 @@ class Person {
     move_y(dy) {
         // Attempt to move 1 pixel up/down
         if (this.collide(0, dy)) return;
+
+        var dx = 0;
+        var x = this.x;
+        if (dy < 0) {
+            var y0 = this.y - (this.height - 1);
+            var y1 = this.y;
+            for (var y = y0; y <= y1; y++) {
+                this.game.move_pixel(x, y, x + dx, y + dy);
+            }
+        } else {
+            var y0 = this.y;
+            var y1 = this.y - (this.height - 1);
+            for (var y = y0; y >= y1; y--) {
+                this.game.move_pixel(x, y, x + dx, y + dy);
+            }
+        }
+
         this.y += dy;
     }
 
