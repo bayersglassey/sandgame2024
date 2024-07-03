@@ -44,6 +44,18 @@ function rgb(r, g, b) {
 }
 
 
+function shuffle(items) {
+    // Randomly shuffle the given array
+    // Based on: https://stackoverflow.com/a/12646864
+    for (var i = items.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = items[i];
+        items[i] = items[j];
+        items[j] = temp;
+    }
+}
+
+
 var NOTHING = 0;
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
@@ -197,8 +209,6 @@ class SandGame {
         } else {
             this.pixels = pixels;
         }
-        this.pixels_next = new Uint32Array(width * height);
-        this.pixels_next.fill(NOTHING);
 
         this.keydown = {};
         this.mousedown = false;
@@ -214,6 +224,11 @@ class SandGame {
         canvas.addEventListener('mousedown', this.onmousedown.bind(this));
         canvas.addEventListener('mouseup', this.onmouseup.bind(this));
         canvas.addEventListener('mousemove', this.onmousemove.bind(this));
+
+        // We will randomly shuffle this array each step, and use it to
+        // decide in what order to process pixels
+        this.indexes = [];
+        for (var i = 0; i < width * height; i++) this.indexes[i] = i;
 
         this.people = [];
         this.people.push(new Person(this, KEYMAP_1));
@@ -292,7 +307,7 @@ class SandGame {
         if (x < 0 || x >= this.width) return;
         if (y < 0 || y >= this.height) return;
         var i = y * this.width + x;
-        this.pixels_next[i] = value;
+        this.pixels[i] = value;
     }
 
     move_pixel(x0, y0, x1, y1) {
@@ -314,40 +329,33 @@ class SandGame {
         if (this.mousedown) { this.dropstuff(); }
 
         // Game physics!
-        for (var y = 0; y < this.height; y++) {
-            for (var x = 0; x < this.width; x++) {
-                var material = this.get_pixel(x, y);
-                if (material === SAND || material == WATER) {
-                    if (is_solid(this.get_pixel(x, y + 1))) {
-                        if (Math.random() < .5 && !is_solid(this.get_pixel(x - 1, y + 1))) {
-                            // We fall down and to the left
-                            this.move_pixel(x, y, x - 1, y + 1);
-                        } else if (!is_solid(this.get_pixel(x + 1, y + 1))) {
-                            // We fall down and to the right
-                            this.move_pixel(x, y, x + 1, y + 1);
-                        } else {
-                            // We stay right where we are!
-                            this.set_pixel(x, y, material);
-                        }
-                    } else{
-                        // We fall straight down
-                        this.move_pixel(x, y, x, y + 1);
+        shuffle(this.indexes);
+        for (var i of this.indexes) {
+            var x = i % this.width;
+            var y = Math.floor(i / this.width);
+            var material = this.pixels[i];
+            if (material === SAND || material == WATER) {
+                if (is_solid(this.get_pixel(x, y + 1))) {
+                    if (Math.random() < .5 && !is_solid(this.get_pixel(x - 1, y + 1))) {
+                        // We fall down and to the left
+                        this.move_pixel(x, y, x - 1, y + 1);
+                    } else if (!is_solid(this.get_pixel(x + 1, y + 1))) {
+                        // We fall down and to the right
+                        this.move_pixel(x, y, x + 1, y + 1);
+                    } else {
+                        // We stay right where we are!
                     }
-                } else if (is_solid(material)) {
-                    // By default, solid materials stay where they are
-                    this.set_pixel(x, y, material);
+                } else{
+                    // We fall straight down
+                    this.move_pixel(x, y, x, y + 1);
                 }
+            } else if (is_solid(material)) {
+                // By default, solid materials stay where they are
             }
         }
 
         // Person physics!
         for (var person of this.people) person.step();
-
-        // Switch pixels and pixels_next
-        var pixels = this.pixels_next;
-        this.pixels_next = this.pixels;
-        this.pixels = pixels;
-        this.pixels_next.fill(NOTHING);
 
         // Render and continue!
         this.render();
