@@ -63,10 +63,15 @@ var WATER = rgb(20, 80, 255);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(0, 80, 225);
 var SOLID = [SAND, STONE, SKIN, CLOTHES];
+var PUSHABLE = [SAND];
 
 
 function is_solid(pixel) {
     return SOLID.indexOf(pixel) >= 0;
+}
+
+function is_pushable(pixel) {
+    return PUSHABLE.indexOf(pixel) >= 0;
 }
 
 
@@ -141,6 +146,14 @@ class Person {
         var y0 = this.y - (this.height - 1) + dy;
         var y1 = this.y + dy;
         for (var y = y0; y <= y1; y++) {
+            if (
+                x === this.x &&
+                y >= this.y - (this.height - 1) &&
+                y <= this.y
+            ) {
+                // Make sure we don't collide with ourselves!..
+                continue;
+            }
             if (y < 0 || y >= height) return true;
             var i = y * width + x;
             if (is_solid(pixels[i])) return true;
@@ -149,28 +162,57 @@ class Person {
     }
 
     move_x(dx) {
-        // Attmpt to walk 1 pixel left/right, moving up any inclines
+
+        // Attempt to walk 1 pixel left/right, moving up any inclines
         // less high than we are
         var dy0 = 0;
         var dy1 = -(this.height - 1);
+        if (this.keydown.d) dy1 = 0;
         for (var dy = dy0; dy >= dy1; dy--) {
             if (this.collide(dx, dy)) continue;
 
+            // We can move!
             var x = this.x;
             var y0 = this.y - (this.height - 1);
             var y1 = this.y;
             for (var y = y0; y <= y1; y++) {
                 this.game.move_pixel(x, y, x + dx, y + dy);
             }
-
             this.x += dx;
             this.y += dy;
-            break;
+            return;
+        }
+
+        // We couldn't move forwards normally, so let's attempt to push
+        // whatever's in front of us
+        this.push_x(dx);
+    }
+
+    push_x(dx) {
+        var y0 = this.y;
+        var y1 = this.y - (this.height - 1);
+        for (var y = y0; y >= y1; y--) {
+            var x0 = this.x + dx;
+            var pixel;
+            for (
+                var x = x0;
+                is_pushable(pixel = this.game.get_pixel(x, y));
+                x += dx
+            );
+            if (pixel !== NOTHING) continue;
+            var x1 = x;
+            for (var x = x1; x !== x0; x -= dx) {
+                this.game.move_pixel(x, y, x - dx, y);
+            }
         }
     }
 
     move_y(dy) {
         // Attempt to move 1 pixel up/down
+
+        // Try to push stuff away from on top of us
+        if (dy < 0) this.push_y(dy);
+
         if (this.collide(0, dy)) return;
 
         var dx = 0;
@@ -190,6 +232,24 @@ class Person {
         }
 
         this.y += dy;
+    }
+
+    push_y(dy) {
+        var x = this.x;
+
+        var y0 = this.y + dy;
+        if (dy < 0) y0 -= this.height - 1;
+        var pixel;
+        for (
+            var y = y0;
+            is_pushable(pixel = this.game.get_pixel(x, y));
+            y += dy
+        );
+        if (pixel !== NOTHING) return;
+        var y1 = y;
+        for (var y = y1; y !== y0; y -= dy) {
+            this.game.move_pixel(x, y, x, y - dy);
+        }
     }
 
     onkeydown(keycode) {
