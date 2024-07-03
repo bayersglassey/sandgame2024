@@ -1,0 +1,41 @@
+
+
+* Better editor controls
+    * Do the 5-pixel horiz line by default
+        * Toggle single-pixel or column modes with keypresses (not holding ctrl/shift)
+    * Select materials with numbers or QWEASD or something
+
+* Finish materials
+    * Density (integer, denser materials displace lighter ones)
+    * Solidity (boolean, whether Person can stand on it)
+    * Add some simple materials
+        * Waterspout/sandspout (continuously produces water/sand)
+            * Corresponding sink(s), which consume water/sand?..
+        * Oil (denser than water)
+        * Brick/wood (doesn't fall left/right)
+            * Can support itself sideways so we can build roofs out of it?..
+    * Wind (pushes things sideways, maybe similar to how Person pushes)
+
+* Add plants
+
+* Finish Person
+    X When you move, move your pixels too ;) 
+    * Add velocity?..
+        * Maybe just a chonky horizontal pseudo-velocity, similar to JUMP_HANG?..
+    * Push pushable materials
+        X e.g. sand, water can be pushed left/right/up
+        * water you should sink into... does it teleport from your feet to above your head?..
+    * Add digging/grabbing a chunk of materials
+    * Rectangular person (i.e. width > 1), not just a line?..
+    * Add multiple people?.. with some kind of AI?..
+        * Or even non-people?.. animals etc?.. even horizontal ones?.. fish?.. worms?..
+
+* Weather patterns
+    * Rain, sandstorm, wind
+        * Combos?..
+    * Sunshine?.. day/night?..
+
+* "Levels"
+    * So, save images locally & serve 'em up
+        * Currently we can save/load raw bytes, but can we do PNG?
+    * How are they tied together?.. do we connect them in a map?.. doors?.. goals?..
