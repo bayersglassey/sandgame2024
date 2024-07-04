@@ -10,14 +10,15 @@
     X Density (integer, denser materials displace lighter ones)
     X Solidity (boolean, whether Person can stand on it)
     * Add some simple materials
-        * Waterspout/sandspout (continuously produces water/sand)
-            * Corresponding sink(s), which consume water/sand?..
+        X Waterspout/sandspout (continuously produces water/sand)
+            X Corresponding sink(s), which consume water/sand?..
         * Oil (denser than water)
         * Brick/wood (doesn't fall left/right)
             * Can support itself sideways so we can build roofs out of it?..
     * Wind (pushes things sideways, maybe similar to how Person pushes)
 
-* Add plants
+* Add plants, animals, bugs
+    * Fish & bears beside a stream, please
 
 * Finish Person
     X When you move, move your pixels too ;) 
@@ -30,6 +31,7 @@
     * Rectangular person (i.e. width > 1), not just a line?..
     * Add multiple people?.. with some kind of AI?..
         * Or even non-people?.. animals etc?.. even horizontal ones?.. fish?.. worms?..
+    * Zoom in on the person?.. and add scrolling?..
 
 * Weather patterns
     * Rain, sandstorm, wind
