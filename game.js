@@ -62,16 +62,46 @@ var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(0, 80, 225);
+var DENSITY = {
+    [NOTHING]: 0,
+    [SAND]: 2,
+    [WATER]: 1,
+    [STONE]: 99,
+};
 var SOLID = [SAND, STONE, SKIN, CLOTHES];
+var FALLS = [SAND, WATER];
+var FLUID = [WATER];
 var PUSHABLE = [SAND];
 
 
-function is_solid(pixel) {
-    return SOLID.indexOf(pixel) >= 0;
+function get_density(material) {
+    var density = DENSITY[material];
+    if (density === undefined) return 10;
+    return density;
 }
 
-function is_pushable(pixel) {
-    return PUSHABLE.indexOf(pixel) >= 0;
+function is_denser(material1, material2) {
+    return get_density(material1) > get_density(material2);
+}
+
+function is_denser_or_equal(material1, material2) {
+    return get_density(material1) >= get_density(material2);
+}
+
+function is_solid(material) {
+    return SOLID.indexOf(material) >= 0;
+}
+
+function does_fall(material) {
+    return FALLS.indexOf(material) >= 0;
+}
+
+function is_fluid(material) {
+    return FLUID.indexOf(material) >= 0;
+}
+
+function is_pushable(material) {
+    return PUSHABLE.indexOf(material) >= 0;
 }
 
 
@@ -193,10 +223,18 @@ class Person {
         var y1 = this.y - (this.height - 1);
         for (var y = y0; y >= y1; y--) {
             var x0 = this.x + dx;
-            var pixel;
+            var prev_pixel;
+            var pixel = NOTHING;
             for (
                 var x = x0;
-                is_pushable(pixel = this.game.get_pixel(x, y));
+                (
+                    prev_pixel = pixel,
+                    pixel = this.game.get_pixel(x, y),
+                    pixel !== NOTHING && (
+                        is_pushable(pixel) ||
+                        is_denser_or_equal(prev_pixel, pixel)
+                    )
+                );
                 x += dx
             );
             if (pixel !== NOTHING) continue;
@@ -239,10 +277,19 @@ class Person {
 
         var y0 = this.y + dy;
         if (dy < 0) y0 -= this.height - 1;
-        var pixel;
+
+        var prev_pixel;
+        var pixel = NOTHING;
         for (
             var y = y0;
-            is_pushable(pixel = this.game.get_pixel(x, y));
+            (
+                prev_pixel = pixel,
+                pixel = this.game.get_pixel(x, y),
+                pixel !== NOTHING && (
+                    is_pushable(pixel) ||
+                    is_denser_or_equal(prev_pixel, pixel)
+                )
+            );
             y += dy
         );
         if (pixel !== NOTHING) return;
@@ -420,23 +467,36 @@ class SandGame {
             var x = i % this.width;
             var y = Math.floor(i / this.width);
             var material = this.pixels[i];
-            if (material === SAND || material == WATER) {
-                if (is_solid(this.get_pixel(x, y + 1))) {
-                    if (Math.random() < .5 && !is_solid(this.get_pixel(x - 1, y + 1))) {
-                        // We fall down and to the left
-                        this.move_pixel(x, y, x - 1, y + 1);
-                    } else if (!is_solid(this.get_pixel(x + 1, y + 1))) {
-                        // We fall down and to the right
-                        this.move_pixel(x, y, x + 1, y + 1);
-                    } else {
-                        // We stay right where we are!
-                    }
-                } else{
+            if (does_fall(material)) {
+                if (is_denser(material, this.get_pixel(x, y + 1))) {
                     // We fall straight down
                     this.move_pixel(x, y, x, y + 1);
+                } else {
+                    if (Math.random() < .5) {
+                        if (is_denser(material, this.get_pixel(x - 1, y + 1))) {
+                            // We fall down and to the left
+                            this.move_pixel(x, y, x - 1, y + 1);
+                        }
+                    } else {
+                        if (is_denser(material, this.get_pixel(x + 1, y + 1))) {
+                            // We fall down and to the right
+                            this.move_pixel(x, y, x + 1, y + 1);
+                        }
+                    }
                 }
-            } else if (is_solid(material)) {
-                // By default, solid materials stay where they are
+            }
+            if (is_fluid(material)) {
+                if (Math.random() < .5) {
+                    if (is_denser(material, this.get_pixel(x - 1, y))) {
+                        // We jiggle to the left
+                        this.move_pixel(x, y, x - 1, y);
+                    }
+                } else {
+                    if (is_denser(material, this.get_pixel(x + 1, y))) {
+                        // We jiggle to the right
+                        this.move_pixel(x, y, x + 1, y);
+                    }
+                }
             }
         }
 
