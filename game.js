@@ -19,9 +19,6 @@ var KEYCODE_DOWN = 40;
 var KEYCODE_LEFT = 37;
 var KEYCODE_RIGHT = 39;
 var KEYCODE_SPACE = 32;
-var KEYCODE_SELECT1 = get_keycode('q');
-var KEYCODE_SELECT2 = get_keycode('w');
-var KEYCODE_SELECT3 = get_keycode('e');
 
 var KEYMAP_1 = {
     [KEYCODE_UP]: 'u',
@@ -60,24 +57,44 @@ var NOTHING = 0;
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
+var SANDSPOUT = rgb(120, 80, 20);
+var WATERSPOUT = rgb(0, 30, 205);
+var HOLE = rgb(60, 60, 60);
 var SKIN = rgb(255, 150, 180);
-var CLOTHES = rgb(0, 80, 225);
+var CLOTHES = rgb(120, 80, 40);
 var DENSITY = {
     [NOTHING]: 0,
     [SAND]: 2,
     [WATER]: 1,
     [STONE]: 99,
+    [SANDSPOUT]: 99,
+    [WATERSPOUT]: 99,
+    [HOLE]: 99,
 };
-var SOLID = [SAND, STONE, SKIN, CLOTHES];
+var SELECTABLE = [NOTHING, SAND, WATER, STONE, SANDSPOUT, WATERSPOUT, HOLE];
+var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, HOLE, SKIN, CLOTHES];
 var FALLS = [SAND, WATER];
 var FLUID = [WATER];
 var PUSHABLE = [SAND];
+var SPOUTS = {
+    [SANDSPOUT]: SAND,
+    [WATERSPOUT]: WATER,
+};
+var EATS = {
+    [HOLE]: [SAND, WATER],
+};
 
 
 function get_density(material) {
     var density = DENSITY[material];
     if (density === undefined) return 10;
     return density;
+}
+
+function eats(material1, material2) {
+    var eats_materials = EATS[material1];
+    if (!eats_materials) return false;
+    return eats_materials.indexOf(material2) >= 0;
 }
 
 function is_denser(material1, material2) {
@@ -206,7 +223,7 @@ class Person {
             var y0 = this.y - (this.height - 1);
             var y1 = this.y;
             for (var y = y0; y <= y1; y++) {
-                this.game.move_pixel(x, y, x + dx, y + dy);
+                this.game.swap_pixel(x, y, x + dx, y + dy);
             }
             this.x += dx;
             this.y += dy;
@@ -240,7 +257,7 @@ class Person {
             if (pixel !== NOTHING) continue;
             var x1 = x;
             for (var x = x1; x !== x0; x -= dx) {
-                this.game.move_pixel(x, y, x - dx, y);
+                this.game.swap_pixel(x, y, x - dx, y);
             }
         }
     }
@@ -259,13 +276,13 @@ class Person {
             var y0 = this.y - (this.height - 1);
             var y1 = this.y;
             for (var y = y0; y <= y1; y++) {
-                this.game.move_pixel(x, y, x + dx, y + dy);
+                this.game.swap_pixel(x, y, x + dx, y + dy);
             }
         } else {
             var y0 = this.y;
             var y1 = this.y - (this.height - 1);
             for (var y = y0; y >= y1; y--) {
-                this.game.move_pixel(x, y, x + dx, y + dy);
+                this.game.swap_pixel(x, y, x + dx, y + dy);
             }
         }
 
@@ -295,7 +312,7 @@ class Person {
         if (pixel !== NOTHING) return;
         var y1 = y;
         for (var y = y1; y !== y0; y -= dy) {
-            this.game.move_pixel(x, y, x, y - dy);
+            this.game.swap_pixel(x, y, x, y - dy);
         }
     }
 
@@ -375,12 +392,13 @@ class SandGame {
         }
         this.keydown[event.keyCode] = true;
 
-        if (this.keydown[KEYCODE_SELECT1]) {
-            this.selected_material = SAND;
-        } else if (this.keydown[KEYCODE_SELECT2]) {
-            this.selected_material = WATER;
-        } else if (this.keydown[KEYCODE_SELECT3]) {
-            this.selected_material = STONE;
+        // Number keys: choose a material
+        // (0 for NOTHING)
+        if (event.keyCode >= 48 && event.keyCode <= 57) {
+            var number = event.keyCode - 48;
+            if (number < SELECTABLE.length) {
+                this.selected_material = SELECTABLE[number];
+            }
         }
 
         for (var person of this.people) person.onkeydown(event.keyCode);
@@ -418,7 +436,7 @@ class SandGame {
 
         for (var x = x0; x <= x1; x++) {
             for (var y = y0; y <= y1; y++) {
-                if (this.get_pixel(x, y) === NOTHING) {
+                if (this.keydown[KEYCODE_SHIFT] || this.get_pixel(x, y) === NOTHING) {
                     this.set_pixel(x, y, this.selected_material);
                 }
             }
@@ -439,7 +457,7 @@ class SandGame {
         this.pixels[i] = value;
     }
 
-    move_pixel(x0, y0, x1, y1) {
+    swap_pixel(x0, y0, x1, y1) {
         var pixel0 = this.get_pixel(x0, y0);
         var pixel1 = this.get_pixel(x1, y1);
         this.set_pixel(x0, y0, pixel1);
@@ -454,6 +472,22 @@ class SandGame {
         ctx.putImageData(data, 0, 0);
     }
 
+    move_pixel(x0, y0, x1, y1) {
+        var pixel0 = this.get_pixel(x0, y0);
+        var pixel1 = this.get_pixel(x1, y1);
+        if (eats(pixel1, pixel0)) {
+            this.set_pixel(x0, y0, NOTHING);
+            return true;
+        } else if (is_denser(pixel0, pixel1)) {
+            // Equivalent to: this.swap_pixel(x0, y0, x1, y1)
+            this.set_pixel(x0, y0, pixel1);
+            this.set_pixel(x1, y1, pixel0);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     step() {
         if (this.mousedown) { this.dropstuff(); }
 
@@ -464,33 +498,58 @@ class SandGame {
             var y = Math.floor(i / this.width);
             var material = this.pixels[i];
             if (does_fall(material)) {
-                if (is_denser(material, this.get_pixel(x, y + 1))) {
-                    // We fall straight down
-                    this.move_pixel(x, y, x, y + 1);
+                if (this.move_pixel(x, y, x, y + 1)) {
+                    // We fell straight down
                 } else {
                     if (Math.random() < .5) {
-                        if (is_denser(material, this.get_pixel(x - 1, y + 1))) {
-                            // We fall down and to the left
-                            this.move_pixel(x, y, x - 1, y + 1);
+                        if (this.move_pixel(x, y, x - 1, y + 1)) {
+                            // We fell down and to the left
                         }
                     } else {
-                        if (is_denser(material, this.get_pixel(x + 1, y + 1))) {
-                            // We fall down and to the right
-                            this.move_pixel(x, y, x + 1, y + 1);
+                        if (this.move_pixel(x, y, x + 1, y + 1)) {
+                            // We fell down and to the right
                         }
                     }
                 }
             }
+
+            // Don't do anything more with this pixel if it was eaten!
+            material = this.pixels[i];
+            if (material === NOTHING) continue;
+
             if (is_fluid(material)) {
+                // Fluids randomly jiggle back and forth...
                 if (Math.random() < .5) {
-                    if (is_denser(material, this.get_pixel(x - 1, y))) {
-                        // We jiggle to the left
-                        this.move_pixel(x, y, x - 1, y);
+                    if (this.move_pixel(x, y, x - 1, y)) {
+                        // We jiggled to the left
                     }
                 } else {
-                    if (is_denser(material, this.get_pixel(x + 1, y))) {
-                        // We jiggle to the right
-                        this.move_pixel(x, y, x + 1, y);
+                    if (this.move_pixel(x, y, x + 1, y)) {
+                        // We jiggled to the right
+                    }
+                }
+            }
+
+            // Don't do anything more with this pixel if it was eaten!
+            material = this.pixels[i];
+            if (material === NOTHING) continue;
+
+            if (SPOUTS[material] && Math.random() < .05) {
+                var spouted_material = SPOUTS[material];
+                if (is_denser(spouted_material, this.get_pixel(x, y + 1))) {
+                    // We spout straight down
+                    this.set_pixel(x, y + 1, spouted_material);
+                } else {
+                    if (Math.random() < .5) {
+                        if (is_denser(spouted_material, this.get_pixel(x - 1, y + 1))) {
+                            // We spout down and to the left
+                            this.set_pixel(x - 1, y + 1, spouted_material);
+                        }
+                    } else {
+                        if (is_denser(spouted_material, this.get_pixel(x + 1, y + 1))) {
+                            // We spout down and to the right
+                            this.set_pixel(x + 1, y + 1, spouted_material);
+                        }
                     }
                 }
             }
