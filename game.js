@@ -41,6 +41,18 @@ function rgb(r, g, b) {
 }
 
 
+function unpack_rgb(material) {
+    var uint32 = new Uint32Array([material]);
+    return new Uint8ClampedArray(uint32.buffer);
+}
+
+
+function css_rgba(material) {
+    var rgba = unpack_rgb(material);
+    return `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${rgba[3]})`;
+}
+
+
 function shuffle(items) {
     // Randomly shuffle the given array
     // Based on: https://stackoverflow.com/a/12646864
@@ -365,7 +377,7 @@ class SandGame {
         this.mouse_x = 0;
         this.mouse_y = 0;
 
-        this.selected_material = SAND;
+        this.select_material(SAND);
 
         canvas.width = width;
         canvas.height = height;
@@ -386,6 +398,12 @@ class SandGame {
         this.people.push(new Person(this, KEYMAP_1));
     }
 
+    select_material(material) {
+        this.selected_material = material;
+        var material_color = document.getElementById('material_color');
+        material_color.style.background = css_rgba(material);
+    }
+
     onkeydown(event) {
         if (LOG_KEYS) {
             console.log('keydown', event.keyCode);
@@ -397,7 +415,7 @@ class SandGame {
         if (event.keyCode >= 48 && event.keyCode <= 57) {
             var number = event.keyCode - 48;
             if (number < SELECTABLE.length) {
-                this.selected_material = SELECTABLE[number];
+                this.select_material(SELECTABLE[number]);
             }
         }
 

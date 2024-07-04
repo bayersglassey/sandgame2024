@@ -4,7 +4,7 @@
     X Do the 5-pixel horiz line by default
         X Toggle single-pixel or column modes with keypresses (not holding ctrl/shift)
     X Select materials with numbers or QWEASD or something
-    * Show selected material somewhere
+    X Show selected material somewhere
 
 * Finish materials
     X Density (integer, denser materials displace lighter ones)
@@ -15,6 +15,7 @@
         * Oil (denser than water)
         * Brick/wood (doesn't fall left/right)
             * Can support itself sideways so we can build roofs out of it?..
+    * Add a Material class, instead of separate global structures like DENSITY etc
     * Wind (pushes things sideways, maybe similar to how Person pushes)
 
 * Add plants, animals, bugs

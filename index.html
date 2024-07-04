@@ -6,11 +6,15 @@
 </head>
 <body>
 <div id="controls">
-    <input id="load_file_input" type="file">
-    <button id="load_btn">LOAD</button>
-    <br>
-    <input id="save_file_input" type="text">
-    <button id="save_btn">SAVE</button>
+    <div>
+        <input id="load_file_input" type="file">
+        <button id="load_btn">LOAD</button>
+    </div>
+    <div>
+        <input id="save_file_input" type="text">
+        <button id="save_btn">SAVE</button>
+    </div>
+    <div>Current material: <span id="material_color"></span></div>
 </div>
 <canvas id="canvas" tabindex="-1"></canvas>
 </body>

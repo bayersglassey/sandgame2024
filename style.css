@@ -21,3 +21,12 @@ body {
 
     background: #eee;
 }
+
+
+#material_color {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: solid 1px white;
+    vertical-align: text-bottom;
+}
