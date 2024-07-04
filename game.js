@@ -73,7 +73,7 @@ var DENSITY = {
 };
 var SELECTABLE = [NOTHING, SAND, WATER, STONE, SANDSPOUT, WATERSPOUT, HOLE];
 var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, HOLE, SKIN, CLOTHES];
-var FALLS = [SAND, WATER];
+var FALLS = [SAND, WATER, HOLE];
 var FLUID = [WATER];
 var PUSHABLE = [SAND];
 var SPOUTS = {
@@ -81,7 +81,7 @@ var SPOUTS = {
     [WATERSPOUT]: WATER,
 };
 var EATS = {
-    [HOLE]: [SAND, WATER],
+    [HOLE]: [SAND, WATER, HOLE],
 };
 
 
@@ -436,7 +436,11 @@ class SandGame {
 
         for (var x = x0; x <= x1; x++) {
             for (var y = y0; y <= y1; y++) {
-                if (this.keydown[KEYCODE_SHIFT] || this.get_pixel(x, y) === NOTHING) {
+                if (
+                    this.selected_material === NOTHING ||
+                    this.keydown[KEYCODE_SHIFT] ||
+                    this.get_pixel(x, y) === NOTHING
+                ) {
                     this.set_pixel(x, y, this.selected_material);
                 }
             }
