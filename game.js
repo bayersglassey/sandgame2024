@@ -348,6 +348,8 @@ class SandGame {
         this.mouse_x = 0;
         this.mouse_y = 0;
 
+        this.selected_material = SAND;
+
         canvas.width = width;
         canvas.height = height;
         canvas.style.width = width * zoom;
@@ -372,7 +374,15 @@ class SandGame {
             console.log('keydown', event.keyCode);
         }
         this.keydown[event.keyCode] = true;
-        this.dropstuff();
+
+        if (this.keydown[KEYCODE_SELECT1]) {
+            this.selected_material = SAND;
+        } else if (this.keydown[KEYCODE_SELECT2]) {
+            this.selected_material = WATER;
+        } else if (this.keydown[KEYCODE_SELECT3]) {
+            this.selected_material = STONE;
+        }
+
         for (var person of this.people) person.onkeydown(event.keyCode);
     }
     onkeyup(event) {
@@ -394,37 +404,23 @@ class SandGame {
     mousemove(event) {
         this.mouse_x = Math.floor(event.offsetX / this.zoom);
         this.mouse_y = Math.floor(event.offsetY / this.zoom);
-        this.dropstuff();
+        if (this.mousedown) this.dropstuff();
     }
 
     dropstuff() {
         var mx = this.mouse_x, x0 = mx, x1 = mx;
         var my = this.mouse_y, y0 = my, y1 = my;
 
-        if (this.keydown[KEYCODE_SELECT1]) {
-            var pixel = STONE;
-        } else if (this.keydown[KEYCODE_SELECT2]) {
-            var pixel = SAND;
-        } else if (this.keydown[KEYCODE_SELECT3]) {
-            var pixel = WATER;
-        } else if (this.mousedown) {
-            // Using the keys doesn't work so well, because then you can't
-            // move the cursor with my laptop's touchpad...
-            var pixel = this.keydown[KEYCODE_SHIFT]? STONE: SAND;
-        } else {
-            return;
-        }
-
-        if (this.keydown[KEYCODE_CONTROL]) {
+        if (!this.keydown[KEYCODE_CONTROL]) {
             x0 -= 3;
             x1 += 3;
-        } else if (pixel === STONE) {
-            y1 = this.height - 1;
         }
 
         for (var x = x0; x <= x1; x++) {
             for (var y = y0; y <= y1; y++) {
-                this.set_pixel(x, y, pixel);
+                if (this.get_pixel(x, y) === NOTHING) {
+                    this.set_pixel(x, y, this.selected_material);
+                }
             }
         }
     }
