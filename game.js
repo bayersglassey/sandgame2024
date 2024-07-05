@@ -430,6 +430,7 @@ class Person {
 
 class SandGame {
     constructor(width, height, zoom, canvas, pixels) {
+        // NOTE: pixels is an optional Uint32Array
         this.width = width;
         this.height = height;
         this.zoom = zoom;
@@ -535,6 +536,8 @@ class SandGame {
                 }
             }
         }
+
+        this.render();
     }
 
     get_pixel(x, y) {
@@ -675,15 +678,23 @@ class SandGame {
             this.timeout_handle = null;
         }
     }
+
+    start() {
+        if (this.timeout_handle === null) this.step();
+    }
+
+    is_running() {
+        return this.timeout_handle !== null;
+    }
 }
 
 
 window.addEventListener('load', function() {
     var canvas = document.getElementById('canvas');
-    var save_file_input = document.getElementById('save_file_input');
-    var load_file_input = document.getElementById('load_file_input');
+    var filename_input = document.getElementById('filename_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
+    var pause_btn = document.getElementById('pause_btn');
 
     create_material_elems();
 
@@ -709,40 +720,62 @@ window.addEventListener('load', function() {
     });
 
     function new_game(pixels) {
-        // NOTE: pixels is optional
+        // NOTE: pixels is an optional Uint32Array
         canvas.focus();
         var game = new SandGame(300, 200, 3, canvas, pixels);
         window.game = game;
         game.step();
+        pause_btn.textContent = 'PAUSE';
     }
 
     new_game();
 
     save_btn.onclick = function() {
-        var filename = save_file_input.value;
+        var filename = filename_input.value;
         if (!filename) return;
-        var pixels = window.game.pixels;
-        var blob = new Blob([pixels.buffer],
-            {type: 'application/octet-stream'});
+        var data_url = canvas.toDataURL();
+        var data_url_parts = data_url.split(',');
+        var data = atob(data_url_parts[1]);
+        data += 'XXMAGICXX{"hello": "world"}'; // Whee!... TODO: serialize the game's state somehow
+        data_url_parts[1] = btoa(data);
+        data_url = data_url_parts.join(',');
+
         var link = document.createElement('a');
         document.body.appendChild(link);
-        link.href = URL.createObjectURL(blob);
-        var timestamp = Number(new Date());
+        link.href = data_url;
         link.download = filename;
         link.click();
         link.remove();
     }
 
     load_btn.onclick = function() {
-        var file = load_file_input.files && load_file_input.files[0];
-        if (!file) return;
+        var filename = filename_input.value;
+        if (!filename) return;
         window.game.stop();
-        var reader = new FileReader();
-        reader.onload = function() {
-            var buffer = reader.result;
-            var pixels = new Uint32Array(buffer);
+
+        var image = new Image();
+        image.crossOrigin = 'Anonymous';
+        image.onload = function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+            var image_data = ctx.getImageData(0, 0, image.width, image.height);
+            var pixels = new Uint32Array(image_data.data.buffer);
+            // TODO: deserialize game state from the image, somehow?..
             new_game(pixels);
         }
-        reader.readAsArrayBuffer(file);
+        image.src = 'images/' + filename;
+    }
+
+    pause_btn.onclick = function() {
+        if (game.is_running()) {
+            game.stop();
+            pause_btn.textContent = 'UNPAUSE';
+        } else {
+            game.start();
+            pause_btn.textContent = 'PAUSE';
+        }
     }
 });
