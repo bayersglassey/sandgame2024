@@ -25,8 +25,9 @@
 
 * Finish Person
     X When you move, move your pixels too ;) 
-    * Add velocity?..
-        * Maybe just a chonky horizontal pseudo-velocity, similar to JUMP_HANG?..
+    X Add velocity?..
+        X Maybe just a chonky horizontal pseudo-velocity, similar to JUMP_HANG?..
+          NAAAHHH -- I tried it, didn't feel good.
     X Push pushable materials
         X e.g. sand, water can be pushed left/right/up
         X water you should sink into... does it teleport from your feet to above your head?..
