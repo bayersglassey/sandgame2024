@@ -74,6 +74,7 @@ var WATERSPOUT = rgb(0, 30, 205);
 var HOLE = rgb(60, 60, 60);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(120, 80, 40);
+var WOOD = rgb(255, 125, 125);
 var DENSITY = {
     [NOTHING]: 0,
     [SAND]: 2,
@@ -81,13 +82,18 @@ var DENSITY = {
     [STONE]: 99,
     [SANDSPOUT]: 99,
     [WATERSPOUT]: 99,
-    [HOLE]: 99,
+    [HOLE]: 2,
+    [WOOD]: 2,
 };
-var SELECTABLE = [NOTHING, SAND, WATER, STONE, SANDSPOUT, WATERSPOUT, HOLE];
-var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, HOLE, SKIN, CLOTHES];
-var FALLS = [SAND, WATER, HOLE];
+var SELECTABLE = [NOTHING, SAND, WATER, STONE, SANDSPOUT, WATERSPOUT, HOLE, WOOD];
+var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, HOLE, SKIN, CLOTHES, WOOD];
+var FALLS = [SAND, WATER, HOLE, WOOD];
+var FALLS_STRAIGHT = [WOOD];
+var SUPPORTS = {
+    [WOOD]: [WOOD],
+};
 var FLUID = [WATER];
-var PUSHABLE = [SAND];
+var PUSHABLE = [SAND, WOOD];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
     [WATERSPOUT]: WATER,
@@ -123,6 +129,16 @@ function is_solid(material) {
 
 function does_fall(material) {
     return FALLS.indexOf(material) >= 0;
+}
+
+function does_fall_straight(material) {
+    return FALLS_STRAIGHT.indexOf(material) >= 0;
+}
+
+function supports(material1, material2) {
+    var supports_materials = SUPPORTS[material1];
+    if (!supports_materials) return false;
+    return supports_materials.indexOf(material2) >= 0;
 }
 
 function is_fluid(material) {
@@ -386,7 +402,7 @@ class SandGame {
         window.addEventListener('keydown', this.onkeydown.bind(this));
         window.addEventListener('keyup', this.onkeyup.bind(this));
         canvas.addEventListener('mousedown', this.onmousedown.bind(this));
-        canvas.addEventListener('mouseup', this.onmouseup.bind(this));
+        window.addEventListener('mouseup', this.onmouseup.bind(this));
         canvas.addEventListener('mousemove', this.onmousemove.bind(this));
 
         // We will randomly shuffle this array each step, and use it to
@@ -519,10 +535,22 @@ class SandGame {
             var x = i % this.width;
             var y = Math.floor(i / this.width);
             var material = this.pixels[i];
+
+            // Falling physics
             if (does_fall(material)) {
-                if (this.move_pixel(x, y, x, y + 1)) {
+                var supported = (
+                    (
+                        supports(this.get_pixel(x - 1, y), material) &&
+                        supports(this.get_pixel(x + 1, y), material)
+                    ) ||
+                    supports(this.get_pixel(x - 1, y - 1), material) ||
+                    supports(this.get_pixel(x + 1, y - 1), material)
+                );
+                if (supported) {
+                    // Don't fall!
+                } else if (this.move_pixel(x, y, x, y + 1)) {
                     // We fell straight down
-                } else {
+                } else if (!does_fall_straight(material)) {
                     if (Math.random() < .5) {
                         if (this.move_pixel(x, y, x - 1, y + 1)) {
                             // We fell down and to the left
@@ -535,10 +563,10 @@ class SandGame {
                 }
             }
 
-            // Don't do anything more with this pixel if it was eaten!
-            material = this.pixels[i];
-            if (material === NOTHING) continue;
+            // Don't do anything more with this pixel if it moved!
+            if (this.pixels[i] !== material) continue;
 
+            // Fluid physics
             if (is_fluid(material)) {
                 // Fluids randomly jiggle back and forth...
                 if (Math.random() < .5) {
@@ -552,10 +580,10 @@ class SandGame {
                 }
             }
 
-            // Don't do anything more with this pixel if it was eaten!
-            material = this.pixels[i];
-            if (material === NOTHING) continue;
+            // Don't do anything more with this pixel if it moved!
+            if (this.pixels[i] !== material) continue;
 
+            // Spouting physics
             if (SPOUTS[material] && Math.random() < .05) {
                 var spouted_material = SPOUTS[material];
                 if (is_denser(spouted_material, this.get_pixel(x, y + 1))) {

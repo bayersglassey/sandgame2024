@@ -13,8 +13,10 @@
         X Waterspout/sandspout (continuously produces water/sand)
             X Corresponding sink(s), which consume water/sand?..
         * Oil (denser than water)
-        * Brick/wood (doesn't fall left/right)
+        X Brick/wood (doesn't fall left/right)
             * Can support itself sideways so we can build roofs out of it?..
+              Yes, although actually it ends up supporting itself in midair,
+              which I didn't expect.
     * Add a Material class, instead of separate global structures like DENSITY etc
     * Wind (pushes things sideways, maybe similar to how Person pushes)
 
