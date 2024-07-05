@@ -9,14 +9,16 @@
 * Finish materials
     X Density (integer, denser materials displace lighter ones)
     X Solidity (boolean, whether Person can stand on it)
-    * Add some simple materials
+    X Add some simple materials
         X Waterspout/sandspout (continuously produces water/sand)
             X Corresponding sink(s), which consume water/sand?..
-        * Oil (denser than water)
+        X Oil (denser than water)
+          ...oh actually, *less* dense ;) i.e. floats on water
         X Brick/wood (doesn't fall left/right)
-            * Can support itself sideways so we can build roofs out of it?..
+            X Can support itself sideways so we can build roofs out of it?..
               Yes, although actually it ends up supporting itself in midair,
               which I didn't expect.
+              Also, now it's pushable and pink. O_o
     * Add a Material class, instead of separate global structures like DENSITY etc
     * Wind (pushes things sideways, maybe similar to how Person pushes)
 
@@ -33,6 +35,7 @@
         X water you should sink into... does it teleport from your feet to above your head?..
     * Add digging/grabbing a chunk of materials
     * Rectangular person (i.e. width > 1), not just a line?..
+        * Yeah!.. then we can have bears, which are giant rectangles!..
     * Add multiple people?.. with some kind of AI?..
         * Or even non-people?.. animals etc?.. even horizontal ones?.. fish?.. worms?..
     * Zoom in on the person?.. and add scrolling?..

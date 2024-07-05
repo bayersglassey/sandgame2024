@@ -69,37 +69,42 @@ var NOTHING = 0;
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
+var OIL = rgb(20, 180, 200);
 var SANDSPOUT = rgb(120, 80, 20);
 var WATERSPOUT = rgb(0, 30, 205);
+var OILSPOUT = rgb(0, 130, 150);
 var HOLE = rgb(60, 60, 60);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(120, 80, 40);
 var WOOD = rgb(255, 125, 125);
 var DENSITY = {
     [NOTHING]: 0,
-    [SAND]: 2,
-    [WATER]: 1,
+    [SAND]: 3,
+    [WATER]: 2,
+    [OIL]: 1,
     [STONE]: 99,
     [SANDSPOUT]: 99,
     [WATERSPOUT]: 99,
-    [HOLE]: 2,
-    [WOOD]: 2,
+    [OILSPOUT]: 99,
+    [HOLE]: 3,
+    [WOOD]: 3,
 };
-var SELECTABLE = [NOTHING, SAND, WATER, STONE, SANDSPOUT, WATERSPOUT, HOLE, WOOD];
-var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, HOLE, SKIN, CLOTHES, WOOD];
-var FALLS = [SAND, WATER, HOLE, WOOD];
+var SELECTABLE = [NOTHING, SAND, WATER, OIL, STONE, SANDSPOUT, WATERSPOUT, OILSPOUT, HOLE, WOOD];
+var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, OILSPOUT, HOLE, SKIN, CLOTHES, WOOD];
+var FALLS = [SAND, WATER, OIL, HOLE, WOOD];
 var FALLS_STRAIGHT = [WOOD];
 var SUPPORTS = {
     [WOOD]: [WOOD],
 };
-var FLUID = [WATER];
+var FLUID = [WATER, OIL];
 var PUSHABLE = [SAND, WOOD];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
     [WATERSPOUT]: WATER,
+    [OILSPOUT]: OIL,
 };
 var EATS = {
-    [HOLE]: [SAND, WATER, HOLE],
+    [HOLE]: [SAND, WATER, OIL, HOLE],
 };
 
 
