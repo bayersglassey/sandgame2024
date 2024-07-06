@@ -70,7 +70,7 @@ function create_material_elems() {
                 var span = event.target;
                 var material = Number(span.getAttribute('data-material'));
                 window.game.select_material(material);
-            }
+            };
         }
     }
 }
@@ -256,8 +256,6 @@ class Person {
     constructor(game, keymap) {
         this.game = game;
         this.keymap = keymap;
-
-        this.timeout_handle = null;
 
         this.x = Math.round(game.width / 2);
         this.y = Math.round(game.height - 1);
@@ -494,6 +492,7 @@ class SandGame {
         this.zoom = zoom;
         this.time = gamedata.time;
         this.canvas = canvas;
+        this.timeout_handle = null;
 
         if (!pixels) {
             this.pixels = new Uint32Array(width * height);
@@ -761,6 +760,8 @@ window.addEventListener('load', function() {
     var filename_input = document.getElementById('filename_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
+    var load_level_btn = document.getElementById('load_level_btn');
+    var new_game_btn = document.getElementById('new_game_btn');
     var pause_btn = document.getElementById('pause_btn');
 
     create_material_elems();
@@ -790,15 +791,23 @@ window.addEventListener('load', function() {
         // NOTE: pixels is an optional Uint32Array, gamedata is an
         // optional Object, see DEFAULT_GAMEDATA, serialize, deserialize
         canvas.focus();
+
+        var old_game = window.game;
+        var paused = old_game && !old_game.is_running();
+        if (old_game) old_game.stop();
+
         var game = new SandGame(canvas, pixels, gamedata);
         window.game = game;
-        game.step();
-        pause_btn.textContent = 'PAUSE';
+
+        if (!paused) game.step();
+        else game.render();
     }
 
+    window.new_game = new_game;
     new_game();
 
     save_btn.onclick = function() {
+        canvas.focus();
         var filename = filename_input.value + '.png';
         if (!filename) return;
         var data_url = canvas.toDataURL();
@@ -814,15 +823,28 @@ window.addEventListener('load', function() {
         link.download = filename;
         link.click();
         link.remove();
-    }
+    };
 
     load_btn.onclick = function() {
+        canvas.focus();
         var filename = filename_input.value;
         if (!filename) return;
-        window.game.stop();
+        new_game_from_image('images/' + filename + '.png');
+    };
 
-        var image_url = 'images/' + filename + '.png';
+    load_level_btn.onclick = function() {
+        canvas.focus();
+        var filename = filename_input.value;
+        if (!filename) return;
+        new_game_from_image('levels/' + filename + '.png');
+    };
 
+    new_game_btn.onclick = function() {
+        canvas.focus();
+        new_game();
+    };
+
+    function new_game_from_image(image_url) {
         // CACHE BUST WHOOOOO
         var timestamp = Number(new Date());
         image_url += '?cache_bust=' + timestamp;
@@ -856,16 +878,29 @@ window.addEventListener('load', function() {
                 new_game(pixels, gamedata);
             });
         }
+        image.onerror = function(event) {
+            console.log("Error loading image: " + image_url);
+        }
         image.src = image_url;
     }
 
-    pause_btn.onclick = function() {
-        if (game.is_running()) {
-            game.stop();
-            pause_btn.textContent = 'UNPAUSE';
-        } else {
-            game.start();
-            pause_btn.textContent = 'PAUSE';
-        }
+    window.new_game_from_image = new_game_from_image;
+
+    function pause() {
+        game.stop();
+        pause_btn.textContent = 'UNPAUSE';
     }
+    function unpause() {
+        game.start();
+        pause_btn.textContent = 'PAUSE';
+    }
+
+    pause_btn.onclick = function() {
+        canvas.focus();
+        if (game.is_running()) {
+            pause();
+        } else {
+            unpause();
+        }
+    };
 });
