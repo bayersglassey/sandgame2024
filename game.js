@@ -2,6 +2,14 @@
 
 var FRAMERATE = 15;
 var LOG_KEYS = false;
+var MAGIC = 'XXMAGICXX';
+
+var DEFAULT_GAMEDATA = {
+    width: 300,
+    height: 200,
+    zoom: 3,
+    people: [{}],
+};
 
 // Key codes
 function get_keycode(s) {
@@ -203,11 +211,33 @@ function is_pushable(material) {
     return PUSHABLE.indexOf(material) >= 0;
 }
 
+function deserialize(obj, data) {
+    for (var key of obj.SERIALIZE_FIELDS) {
+        if (!(key in data)) continue;
+        obj[key] = data[key];
+    }
+}
+
+function serialize(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(serialize);
+
+    // If we get this far, obj is an object, like a custom class instance
+
+    var data = {};
+    for (var key of obj.SERIALIZE_FIELDS) {
+        data[key] = serialize(obj[key]);
+    }
+    return data;
+}
+
 
 class Person {
     KEYS = 'udlrj';
     JUMP = 25;
     JUMP_HANG = 5;
+
+    SERIALIZE_FIELDS = ['x', 'y', 'jump', 'height'];
 
     constructor(game, keymap) {
         this.game = game;
@@ -429,7 +459,14 @@ class Person {
 
 
 class SandGame {
-    constructor(width, height, zoom, canvas, pixels) {
+    SERIALIZE_FIELDS = ['width', 'height', 'zoom', 'people'];
+
+    constructor(canvas, pixels, gamedata) {
+        gamedata = gamedata || DEFAULT_GAMEDATA;
+        var width = gamedata.width;
+        var height = gamedata.height;
+        var zoom = gamedata.zoom;
+
         // NOTE: pixels is an optional Uint32Array
         this.width = width;
         this.height = height;
@@ -467,7 +504,12 @@ class SandGame {
         for (var i = 0; i < width * height; i++) this.indexes[i] = i;
 
         this.people = [];
-        this.people.push(new Person(this, KEYMAP_1));
+        for (var person_gamedata of gamedata.people) {
+            var keymap = KEYMAP_1; // TODO: add more keymaps, or AI, or whatever
+            var person = new Person(this, keymap);
+            this.people.push(person);
+            deserialize(person, person_gamedata);
+        }
     }
 
     select_material(material) {
@@ -719,10 +761,11 @@ window.addEventListener('load', function() {
         }
     });
 
-    function new_game(pixels) {
-        // NOTE: pixels is an optional Uint32Array
+    function new_game(pixels, gamedata) {
+        // NOTE: pixels is an optional Uint32Array, gamedata is an
+        // optional Object, see DEFAULT_GAMEDATA
         canvas.focus();
-        var game = new SandGame(300, 200, 3, canvas, pixels);
+        var game = new SandGame(canvas, pixels, gamedata);
         window.game = game;
         game.step();
         pause_btn.textContent = 'PAUSE';
@@ -731,12 +774,12 @@ window.addEventListener('load', function() {
     new_game();
 
     save_btn.onclick = function() {
-        var filename = filename_input.value;
+        var filename = filename_input.value + '.png';
         if (!filename) return;
         var data_url = canvas.toDataURL();
         var data_url_parts = data_url.split(',');
         var data = atob(data_url_parts[1]);
-        data += 'XXMAGICXX{"hello": "world"}'; // Whee!... TODO: serialize the game's state somehow
+        data += MAGIC + JSON.stringify(serialize(window.game));
         data_url_parts[1] = btoa(data);
         data_url = data_url_parts.join(',');
 
@@ -753,6 +796,12 @@ window.addEventListener('load', function() {
         if (!filename) return;
         window.game.stop();
 
+        var image_url = 'images/' + filename + '.png';
+
+        // CACHE BUST WHOOOOO
+        var timestamp = Number(new Date());
+        image_url += '?cache_bust=' + timestamp;
+
         var image = new Image();
         image.crossOrigin = 'Anonymous';
         image.onload = function() {
@@ -763,10 +812,26 @@ window.addEventListener('load', function() {
             ctx.drawImage(image, 0, 0);
             var image_data = ctx.getImageData(0, 0, image.width, image.height);
             var pixels = new Uint32Array(image_data.data.buffer);
-            // TODO: deserialize game state from the image, somehow?..
-            new_game(pixels);
+
+            // We now reload the same image we just loaded by setting
+            // image.src, but this time we want to get at the raw data,
+            // so we can grab some JSON we've left after the PNG data.
+            // Wheeee!..
+            fetch(image_url)
+            .then(res => res.arrayBuffer())
+            .then(buffer => {
+                // Unlike image_data.buffer, which contains pixel data parsed
+                // from the raw PNG data by the Image and <canvas>, the buffer
+                // variable here contains raw PNG data (to which we have
+                // appended some JSON, with a magic byte sequence, MAGIC,
+                // separating the PNG data from the JSON data).
+                var gamedata = JSON.parse(new TextDecoder('ascii')
+                    .decode(buffer).split(MAGIC)[1]);
+                console.log("Loaded game data", gamedata);
+                new_game(pixels, gamedata);
+            });
         }
-        image.src = 'images/' + filename;
+        image.src = image_url;
     }
 
     pause_btn.onclick = function() {

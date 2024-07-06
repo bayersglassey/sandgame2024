@@ -46,39 +46,8 @@
     * Sunshine?.. day/night?..
 
 * "Levels"
-    * So, save images locally & serve 'em up
-        * Currently we can save/load raw bytes, but can we do PNG? Yes.
-          But we need to save various kinds of metadata, to... width, height,
-          people, etc. I think we can just append a JSON blob to the raw PNG data?..
-          Ah, but I don't think we can get at that stuff if we load the PNG back
-          using Image.
-          So actually, while saving an image is fun, I think perhaps we do want raw
-          bytes after all.
-          Or we could store an image plus a .json file?..
-          Or store the JSON at the end of the PNG as we're doing now, and just not
-          use Image to load it.
-          Oooohhh, that works out real nice:
-
-            var buffer = await fetch('images/test.png')
-                .then(res => res.arrayBuffer());
-            var data = JSON.parse(new TextDecoder('ascii')
-                .decode(buffer).split('XXMAGICXX')[1]);
-
-          Interestingly, in order to get pixel data from that buffer (i.e. parse it
-          as PNG), we need... an Image.
-          And I believe it's easier to just set image.src = 'images/test.png' than it
-          is to get the bytes from the buffer into the image.
-          That would require something like:
-
-            var reader = new FileReader();
-            reader.onloadend = function() {
-                var image = new Image();
-                image.onload = function() {
-                    // etc, create a canvas, draw the image onto it, then
-                    // grab the pixels from the canvas
-                }
-                image.src = reader.result;
-            }
-            reader.readAsDataURL(new Blob([buffer]));
-
+    X So, save images locally & serve 'em up!
+      Currently we can save/load raw bytes, but can we do PNG? Yes.
+      But we need to save various kinds of metadata, to... width, height,
+      people, etc. I think we can just append a JSON blob to the raw PNG data?.. Yes.
     * How are they tied together?.. do we connect them in a map?.. doors?.. goals?..
