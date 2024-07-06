@@ -4,10 +4,17 @@ var FRAMERATE = 15;
 var LOG_KEYS = false;
 var MAGIC = 'XXMAGICXX';
 
+var TIME_UNITS_PER_DAY = 60 * 60 * 24;
+var MIDNIGHT = 0;
+var DAWN = TIME_UNITS_PER_DAY * (1 / 4);
+var NOON = TIME_UNITS_PER_DAY * (2 / 4);
+var SUNSET = TIME_UNITS_PER_DAY * (3 / 4);
+
 var DEFAULT_GAMEDATA = {
     width: 300,
     height: 200,
     zoom: 3,
+    time: 0,
     people: [{}],
 };
 
@@ -212,9 +219,17 @@ function is_pushable(material) {
 }
 
 function deserialize(obj, data) {
+    // Copy keys of data onto obj
+
+    if (obj === null || typeof obj !== 'object') return;
+    if (Array.isArray(obj)) return; // we dunno how to populate arrays
+
+    // If we get this far, obj is an object, like a custom class instance
     for (var key of obj.SERIALIZE_FIELDS) {
         if (!(key in data)) continue;
-        obj[key] = data[key];
+        var value = data[key];
+        if (Array.isArray(value)) continue; // we dunno how to populate arrays
+        obj[key] = value;
     }
 }
 
@@ -223,7 +238,6 @@ function serialize(obj) {
     if (Array.isArray(obj)) return obj.map(serialize);
 
     // If we get this far, obj is an object, like a custom class instance
-
     var data = {};
     for (var key of obj.SERIALIZE_FIELDS) {
         data[key] = serialize(obj[key]);
@@ -359,14 +373,14 @@ class Person {
                 (
                     prev_pixel = pixel,
                     pixel = this.game.get_pixel(x, y),
-                    pixel !== NOTHING && (
+                    get_density(pixel) > 0 && (
                         is_pushable(pixel) ||
                         is_denser_or_equal(prev_pixel, pixel)
                     )
                 );
                 x += dx
             );
-            if (pixel !== NOTHING) continue;
+            if (get_density(pixel) > 0) continue;
             var x1 = x;
             for (var x = x1; x !== x0; x -= dx) {
                 this.game.swap_pixel(x, y, x - dx, y);
@@ -414,14 +428,14 @@ class Person {
             (
                 prev_pixel = pixel,
                 pixel = this.game.get_pixel(x, y),
-                pixel !== NOTHING && (
+                get_density(pixel) > 0 && (
                     is_pushable(pixel) ||
                     is_denser_or_equal(prev_pixel, pixel)
                 )
             );
             y += dy
         );
-        if (pixel !== NOTHING) return;
+        if (get_density(pixel) > 0) return;
         var y1 = y;
         for (var y = y1; y !== y0; y -= dy) {
             this.game.swap_pixel(x, y, x, y - dy);
@@ -459,10 +473,17 @@ class Person {
 
 
 class SandGame {
-    SERIALIZE_FIELDS = ['width', 'height', 'zoom', 'people'];
+    SERIALIZE_FIELDS = ['width', 'height', 'zoom', 'people', 'time'];
 
     constructor(canvas, pixels, gamedata) {
-        gamedata = gamedata || DEFAULT_GAMEDATA;
+        gamedata = gamedata || {};
+
+        // Get default values for gamedata fields
+        for (var key of this.SERIALIZE_FIELDS) {
+            if (key in gamedata) continue;
+            gamedata[key] = DEFAULT_GAMEDATA[key];
+        }
+
         var width = gamedata.width;
         var height = gamedata.height;
         var zoom = gamedata.zoom;
@@ -471,6 +492,7 @@ class SandGame {
         this.width = width;
         this.height = height;
         this.zoom = zoom;
+        this.time = gamedata.time;
         this.canvas = canvas;
 
         if (!pixels) {
@@ -572,7 +594,7 @@ class SandGame {
                 if (
                     this.selected_material === NOTHING ||
                     this.keydown[KEYCODE_SHIFT] ||
-                    this.get_pixel(x, y) === NOTHING
+                    get_density(this.get_pixel(x, y)) === 0
                 ) {
                     this.set_pixel(x, y, this.selected_material);
                 }
@@ -629,6 +651,9 @@ class SandGame {
 
     step() {
         if (this.mousedown) { this.dropstuff(); }
+
+        // Tick... tick... tick...
+        this.time = (this.time + 1) % TIME_UNITS_PER_DAY;
 
         // Game physics!
         shuffle(this.indexes);
@@ -763,7 +788,7 @@ window.addEventListener('load', function() {
 
     function new_game(pixels, gamedata) {
         // NOTE: pixels is an optional Uint32Array, gamedata is an
-        // optional Object, see DEFAULT_GAMEDATA
+        // optional Object, see DEFAULT_GAMEDATA, serialize, deserialize
         canvas.focus();
         var game = new SandGame(canvas, pixels, gamedata);
         window.game = game;
