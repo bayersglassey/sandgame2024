@@ -1,5 +1,10 @@
 
 
+* Fix bugs
+    * The way FRAMERATE is used right now, we add it onto however much time
+      step + render already took!..
+
+
 * Better editor controls
     X Do the 5-pixel horiz line by default
         X Toggle single-pixel or column modes with keypresses (not holding ctrl/shift)
