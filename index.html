@@ -6,7 +6,25 @@
 </head>
 <body>
 <div id="controls">
+<div id="play_controls">
+    <h3>Falling Sand Game 2024!</h3>
+    <ul>
+        <li>Use <b>left/right arrow keys</b> to move.
+        <li>Use <b>spacebar</b> to jump.
+        <li>Hold <b>down arrow key</b> while moving to push.
+        <li>If you get stuck, click here: <button id="restart_btn2">RESTART LEVEL</button>
+        <li>If you would rather build things, click here: <button id="editor_mode_btn">EDITOR MODE</button>
+    </ul>
+</div>
+<div id="editor_controls" class="hidden">
     <div>
+        <ul style="float: right">
+            <li>SAVE downloads the current game screen as a PNG with some JSON at the end.
+            <li>LOAD loads <code>images/FILENAME.png</code> from the server.
+            <li>LOAD LEVEL loads <code>levels/FILENAME.png</code> from the server (try "1", "2", "3", etc).
+            <li>There is currently no way to load files from your local computer.
+            <li>Sorry the editor's UI is so janky and undocumented. Have fun!
+        </ul>
         <input id="filename_input" type="text" value="test">
         <button id="save_btn">SAVE</button>
         <button id="load_btn">LOAD</button>
@@ -15,7 +33,8 @@
     </div>
     <div>
         <button id="pause_btn">PAUSE</button>
-        <button id="restart_btn">RESTART</button>
+        <button id="restart_btn">RESTART LEVEL</button>
+        <button id="play_mode_btn">EXIT EDITOR MODE</button>
     </div>
     <div id="materials">Materials: <!-- Populated by JS --></div>
     <div>
@@ -23,6 +42,7 @@
         <input id="portal_image_input" type="text" value="">
         <button id="add_portal_btn">ADD PORTAL</button>
     </div>
+</div>
 </div>
 <canvas id="canvas" tabindex="-1"></canvas>
 </body>

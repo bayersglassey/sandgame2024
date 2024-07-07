@@ -3,6 +3,7 @@
 var FRAMERATE = 15;
 var LOG_KEYS = false;
 var MAGIC = 'XXMAGICXX';
+var EDITOR_MODE = false;
 
 var TIME_UNITS_PER_DAY = 60 * 60 * 24;
 var MIDNIGHT = 0;
@@ -965,6 +966,8 @@ class SandGame {
 
 window.addEventListener('load', function() {
     var canvas = document.getElementById('canvas');
+    var play_controls = document.getElementById('play_controls');
+    var editor_controls = document.getElementById('editor_controls');
     var filename_input = document.getElementById('filename_input');
     var save_btn = document.getElementById('save_btn');
     var load_btn = document.getElementById('load_btn');
@@ -972,8 +975,18 @@ window.addEventListener('load', function() {
     var new_game_btn = document.getElementById('new_game_btn');
     var pause_btn = document.getElementById('pause_btn');
     var restart_btn = document.getElementById('restart_btn');
+    var restart_btn2 = document.getElementById('restart_btn2');
     var add_portal_btn = document.getElementById('add_portal_btn');
     var move_person_btn = document.getElementById('move_person_btn');
+    var editor_btn = document.getElementById('editor_btn');
+    var play_btn = document.getElementById('play_btn');
+
+    function hide(elem) {
+        elem.classList.add('hidden');
+    }
+    function show(elem) {
+        elem.classList.remove('hidden');
+    }
 
     create_material_elems();
 
@@ -1015,7 +1028,7 @@ window.addEventListener('load', function() {
     }
 
     window.new_game = new_game;
-    new_game();
+    new_game_from_image('levels/1.png');
 
     save_btn.onclick = function() {
         canvas.focus();
@@ -1115,7 +1128,7 @@ window.addEventListener('load', function() {
         }
     };
 
-    restart_btn.onclick = function() {
+    restart_btn.onclick = restart_btn2.onclick = function() {
         canvas.focus();
         game.restart();
     };
@@ -1130,5 +1143,19 @@ window.addEventListener('load', function() {
         canvas.focus();
         game.select_material(null);
         game.moving_person = true;
+    }
+
+    play_mode_btn.onclick = function() {
+        canvas.focus();
+        EDITOR_MODE = false;
+        hide(editor_controls);
+        show(play_controls);
+    }
+
+    editor_mode_btn.onclick = function() {
+        canvas.focus();
+        EDITOR_MODE = true;
+        hide(play_controls);
+        show(editor_controls);
     }
 });
