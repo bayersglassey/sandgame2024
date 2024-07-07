@@ -10,12 +10,16 @@ var DAWN = TIME_UNITS_PER_DAY * (1 / 4);
 var NOON = TIME_UNITS_PER_DAY * (2 / 4);
 var SUNSET = TIME_UNITS_PER_DAY * (3 / 4);
 
+var DEFAULT_PORTAL_WIDTH = 16;
+var DEFAULT_PORTAL_HEIGHT = 16;
+
 var DEFAULT_GAMEDATA = {
     width: 300,
     height: 200,
     zoom: 3,
     time: 0,
     people: [{}],
+    portals: [],
 };
 
 // Key codes
@@ -65,7 +69,7 @@ function create_material_elems() {
             span.setAttribute('data-material', material);
             span.className = 'material';
             span.textContent = key;
-            span.style.background = css_rgba(material);
+            span.style.background = css_material(material);
             span.onmousedown = function(event) {
                 var span = event.target;
                 var material = Number(span.getAttribute('data-material'));
@@ -99,11 +103,103 @@ function unpack_rgb(material) {
 }
 
 
-function css_rgba(material) {
-    var rgba = unpack_rgb(material);
-    return `rgba(${rgba[0]}, ${rgba[1]}, ${rgba[2]}, ${rgba[3]})`;
+function css_rgb(r, g, b, a) {
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/rgb
+    // Each value can be represented as a <number> between 0 and 255,
+    // a <percentage> between 0% and 100%, or the keyword none
+    // (equivalent to 0% in this case).
+    if (a === undefined) a = 1;
+    else a = a / 255;
+    return `rgb(${r}, ${g}, ${b}, ${a})`;
 }
 
+function css_hsl(h, s, l, a) {
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/hsl
+    // H: A <number>, an <angle>, or the keyword none (equivalent to
+    // 0deg in this case) representing the color's <hue> angle.
+    // S: A <percentage> or the keyword none (equivalent to 0% in this
+    // case). This value represents the color's saturation. Here 100%
+    // is completely saturated, while 0% is completely unsaturated (gray).
+    // L: A <percentage> or the keyword none (equivalent to 0% in this
+    // case). This value represents the color's lightness. Here 100%
+    // is white, 0% is black, and 50% is "normal".
+    if (a === undefined) a = 1;
+    else a = a / 255;
+    return `hsl(${h} ${s} ${l} /${a})`;
+}
+
+function css_material(material) {
+    var rgba = unpack_rgb(material);
+    return css_rgb(rgba[0], rgba[1], rgba[2], rgba[3]);
+}
+
+
+function get_portal_color(t) {
+    function bounce(t) {
+        var c = (t * 4) % 512;
+        return (c >= 256)? 512 - c: c;
+    }
+    return rgb(bounce(t), bounce(t + 100), bounce(t + 200));
+}
+
+
+function draw_rect(pixels, width, x0, y0, w, h, c) {
+    // NOTE: pixels is a Uint32Array
+
+    var height = pixels.length / width;
+
+    var x1 = x0 + w;
+    var y1 = y0 + h;
+
+    // These are used in the for-loops
+    var _x0 = x0, _y0 = y0, _x1 = x1, _y1 = y1;
+    if (_x0 < 0) _x0 = 0;
+    else if (_x0 >= width) _x0 = width - 1;
+    if (_y0 < 0) _y0 = 0;
+    else if (_y0 >= height) _y0 = height - 1;
+    if (_x1 < 0) _x1 = 0;
+    else if (_x1 >= width) _x1 = width - 1;
+    if (_y1 < 0) _y1 = 0;
+    else if (_y1 >= height) _y1 = height - 1;
+
+    // Top
+    if (y0 >= 0 && y0 < height) {
+        var i = y0 * width;
+        for (var x = _x0; x <= _x1; x++) pixels[i + x] = c;
+    }
+
+    // Bottom
+    if (y1 >= 0 && y1 < height) {
+        var i = y1 * width;
+        for (var x = _x0; x <= _x1; x++) pixels[i + x] = c;
+    }
+
+    // Left
+    if (x0 >= 0 && x0 < width) {
+        var i0 = (_y0 + 1) * width + x0;
+        var i1 = (_y1 - 1) * width + x0;
+        for (var i = i0; i <= i1; i += width) pixels[i] = c;
+    }
+
+    // Right
+    if (x1 >= 0 && x1 < width) {
+        var i0 = (_y0 + 1) * width + x1;
+        var i1 = (_y1 - 1) * width + x1;
+        for (var i = i0; i <= i1; i += width) pixels[i] = c;
+    }
+}
+
+
+function rect_collide(ax0, ay0, aw, ah, bx0, by0, bw, bh) {
+    var ax1 = ax0 + aw;
+    var ay1 = ay0 + ah;
+    var bx1 = bx0 + bw;
+    var by1 = by0 + bh;
+    return (
+        ax1 >= bx0 && bx1 >= ax0 &&
+        ay1 >= by0 && by1 >= ay0
+    );
+}
 
 function shuffle(items) {
     // Randomly shuffle the given array
@@ -251,7 +347,7 @@ class Person {
     JUMP = 25;
     JUMP_HANG = 5;
 
-    SERIALIZE_FIELDS = ['x', 'y', 'jump', 'height'];
+    SERIALIZE_FIELDS = ['x', 'y', 'jump', 'width', 'height'];
 
     constructor(game, keymap) {
         this.game = game;
@@ -261,6 +357,7 @@ class Person {
         this.y = Math.round(game.height - 1);
         this.jump = 0;
         this.jump_released = true;
+        this.width = 1;
         this.height = 3;
 
         this.keydown = {};
@@ -299,6 +396,16 @@ class Person {
                 // We're falling (or standing on ground)
                 this.move_y(1);
             }
+        }
+
+        for (var portal of this.game.portals) {
+            if (!portal.image_url) continue;
+            if (!rect_collide(
+                this.x, this.y - (this.height - 1), this.width, this.height,
+                portal.x, portal.y, portal.width, portal.height,
+            )) continue;
+            this.game.portal_activated = true;
+            new_game_from_image(portal.image_url);
         }
     }
 
@@ -451,6 +558,12 @@ class Person {
     }
 
     render_pixels() {
+        this._render_pixels();
+    }
+    clear_pixels() {
+        this._render_pixels(true);
+    }
+    _render_pixels(clear) {
         var width = this.game.width;
         var height = this.game.height;
 
@@ -464,16 +577,30 @@ class Person {
         for (var y = y0; y <= y1; y++) {
             if (y < 0 || y >= height) continue;
             var i = y * width + x;
-            pixels[i] = y === y0? SKIN: CLOTHES;
+            pixels[i] = clear? NOTHING: y === y0? SKIN: CLOTHES;
         }
     }
 }
 
 
-class SandGame {
-    SERIALIZE_FIELDS = ['width', 'height', 'zoom', 'people', 'time'];
+class Portal {
+    SERIALIZE_FIELDS = ['x', 'y', 'width', 'height', 'image_url'];
 
-    constructor(canvas, pixels, gamedata) {
+    constructor(x, y, width, height, image_url) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.image_url = image_url || null;
+    }
+}
+
+
+class SandGame {
+    SERIALIZE_FIELDS = ['width', 'height', 'zoom',
+        'people', 'portals', 'time'];
+
+    constructor(canvas, pixels, gamedata, image_url) {
         gamedata = gamedata || {};
 
         // Get default values for gamedata fields
@@ -487,11 +614,12 @@ class SandGame {
         var zoom = gamedata.zoom;
 
         // NOTE: pixels is an optional Uint32Array
+        this.canvas = canvas;
         this.width = width;
         this.height = height;
         this.zoom = zoom;
+        this.image_url = image_url || null;
         this.time = gamedata.time;
-        this.canvas = canvas;
         this.timeout_handle = null;
 
         if (!pixels) {
@@ -507,6 +635,8 @@ class SandGame {
         this.mouse_y = 0;
 
         this.selected_material = null;
+        this.adding_portal = false;
+        this.moving_person = false;
         this.select_material(SAND);
 
         canvas.width = width;
@@ -531,16 +661,48 @@ class SandGame {
             this.people.push(person);
             deserialize(person, person_gamedata);
         }
+
+        // When we touch a portal, we need to load a new level, but loading
+        // is an async operation, so we need a way to make sure we don't
+        // trigger another load while waiting for the first one to finish.
+        // So, we set this to true, and it causes the game to be paused
+        // until the load completes.
+        this.portal_activated = false;
+
+        this.portals = [];
+        for (var portal_gamedata of gamedata.portals) {
+            this.add_portal(
+                portal_gamedata.x,
+                portal_gamedata.y,
+                portal_gamedata.width,
+                portal_gamedata.height,
+                portal_gamedata.image_url,
+            );
+        }
+    }
+
+    add_portal(x, y, width, height, image_url) {
+        // wtf, javascript
+        if (x === undefined) throw new Error("x undefined");
+        if (y === undefined) throw new Error("y undefined");
+        if (width === undefined) throw new Error("width undefined");
+        if (height === undefined) throw new Error("height undefined");
+        var portal = new Portal(x, y, width, height, image_url);
+        this.portals.push(portal);
     }
 
     select_material(material) {
+        this.adding_portal = false;
+        this.moving_person = false;
         if (this.selected_material !== null) {
             var elem = get_material_elem(this.selected_material);
             elem.classList.remove('selected');
         }
+        if (material !== null) {
+            var elem = get_material_elem(material);
+            elem.classList.add('selected');
+        }
         this.selected_material = material;
-        var elem = get_material_elem(material);
-        elem.classList.add('selected');
     }
 
     onkeydown(event) {
@@ -563,20 +725,44 @@ class SandGame {
     }
     onmousedown(event) {
         if (event.button !== 0) return;
-        this.mousedown = true;
-        this.mousemove(event);
+        this.set_mouse(event);
+        if (this.adding_portal) {
+            var portal_image_input = document.getElementById('portal_image_input');
+            var image_url = portal_image_input.value || null;
+            var w = DEFAULT_PORTAL_WIDTH;
+            var h = DEFAULT_PORTAL_HEIGHT;
+            this.add_portal(
+                this.mouse_x - Math.floor(w / 2),
+                this.mouse_y - Math.floor(h / 2),
+                w, h, image_url);
+            this.adding_portal = false;
+        } else if (this.moving_person) {
+            if (
+                this.mouse_x >= 0 && this.mouse_x < this.width &&
+                this.mouse_y >= 0 && this.mouse_y < this.height
+            ) {
+                var person = this.people[0];
+                person.clear_pixels();
+                person.x = this.mouse_x;
+                person.y = this.mouse_y;
+                this.moving_person = false;
+            }
+        } else {
+            this.mousedown = true;
+            this.dropstuff();
+        }
     }
     onmouseup(event) {
         if (event.button !== 0) return;
         this.mousedown = false;
     }
     onmousemove(event) {
-        this.mousemove(event);
+        this.set_mouse(event);
+        if (this.mousedown) this.dropstuff();
     }
-    mousemove(event) {
+    set_mouse(event) {
         this.mouse_x = Math.floor(event.offsetX / this.zoom);
         this.mouse_y = Math.floor(event.offsetY / this.zoom);
-        if (this.mousedown) this.dropstuff();
     }
 
     dropstuff() {
@@ -625,10 +811,25 @@ class SandGame {
     }
 
     render() {
-        var ctx = this.canvas.getContext('2d');
-        var pixel_data = new Uint8ClampedArray(this.pixels.buffer);
+        // Render people to this.pixels
         for (var person of this.people) person.render_pixels();
+
+        // Create a copy of this.pixels, so we can draw more stuff
+        // without affecting our particular simulation
+        var pixels = this.pixels.slice();
+
+        // Render portals to pixels
+        var portal_color = get_portal_color(this.time);
+        for (var portal of this.portals) {
+            draw_rect(pixels, this.width,
+                portal.x, portal.y, portal.width, portal.height,
+                portal_color);
+        }
+
+        // Draw pixels onto canvas
+        var pixel_data = new Uint8ClampedArray(pixels.buffer);
         var data = new ImageData(pixel_data, this.width, this.height);
+        var ctx = this.canvas.getContext('2d');
         ctx.putImageData(data, 0, 0);
     }
 
@@ -649,6 +850,8 @@ class SandGame {
     }
 
     step() {
+        if (this.portal_activated) return;
+
         if (this.mousedown) { this.dropstuff(); }
 
         // Tick... tick... tick...
@@ -752,6 +955,11 @@ class SandGame {
     is_running() {
         return this.timeout_handle !== null;
     }
+
+    restart() {
+        if (this.image_url) new_game_from_image(this.image_url);
+        else new_game();
+    }
 }
 
 
@@ -763,6 +971,9 @@ window.addEventListener('load', function() {
     var load_level_btn = document.getElementById('load_level_btn');
     var new_game_btn = document.getElementById('new_game_btn');
     var pause_btn = document.getElementById('pause_btn');
+    var restart_btn = document.getElementById('restart_btn');
+    var add_portal_btn = document.getElementById('add_portal_btn');
+    var move_person_btn = document.getElementById('move_person_btn');
 
     create_material_elems();
 
@@ -787,7 +998,7 @@ window.addEventListener('load', function() {
         }
     });
 
-    function new_game(pixels, gamedata) {
+    function new_game(pixels, gamedata, image_url) {
         // NOTE: pixels is an optional Uint32Array, gamedata is an
         // optional Object, see DEFAULT_GAMEDATA, serialize, deserialize
         canvas.focus();
@@ -796,7 +1007,7 @@ window.addEventListener('load', function() {
         var paused = old_game && !old_game.is_running();
         if (old_game) old_game.stop();
 
-        var game = new SandGame(canvas, pixels, gamedata);
+        var game = new SandGame(canvas, pixels, gamedata, image_url);
         window.game = game;
 
         if (!paused) game.step();
@@ -875,7 +1086,7 @@ window.addEventListener('load', function() {
                 var gamedata = JSON.parse(new TextDecoder('ascii')
                     .decode(buffer).split(MAGIC)[1]);
                 console.log("Loaded game data", gamedata);
-                new_game(pixels, gamedata);
+                new_game(pixels, gamedata, image_url);
             });
         }
         image.onerror = function(event) {
@@ -903,4 +1114,21 @@ window.addEventListener('load', function() {
             unpause();
         }
     };
+
+    restart_btn.onclick = function() {
+        canvas.focus();
+        game.restart();
+    };
+
+    add_portal_btn.onclick = function() {
+        canvas.focus();
+        game.select_material(null);
+        game.adding_portal = true;
+    }
+
+    move_person_btn.onclick = function() {
+        canvas.focus();
+        game.select_material(null);
+        game.moving_person = true;
+    }
 });
