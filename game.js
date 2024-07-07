@@ -110,6 +110,9 @@ class SandGame {
             deserialize(person, person_gamedata);
         }
 
+        // Array of Weather instances
+        this.weathers = [];
+
         // When we touch a portal, we need to load a new level, but loading
         // is an async operation, so we need a way to make sure we don't
         // trigger another load while waiting for the first one to finish.
@@ -305,6 +308,18 @@ class SandGame {
 
         // Tick... tick... tick...
         this.time = (this.time + 1) % TIME_UNITS_PER_DAY;
+
+        for (var j = 0; j < this.weathers.length; j++) {
+            var weather = this.weathers[j];
+            if (weather.done()) {
+                // Delete this weather entry
+                this.weathers.splice(j, 1);
+                j--;
+            } else {
+                weather.step(this);
+                weather.age++;
+            }
+        }
 
         // Game physics!
         shuffle(this.indexes);
