@@ -121,6 +121,15 @@ function shuffle(items) {
 }
 
 
+function draw_pixels_on_canvas(pixels, canvas) {
+    // NOTE: pixels is a Uint32Array
+    var pixel_data = new Uint8ClampedArray(pixels.buffer);
+    var data = new ImageData(pixel_data, canvas.width, canvas.height);
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(data, 0, 0);
+}
+
+
 function deserialize(obj, data) {
     // Copy keys of data onto obj
 

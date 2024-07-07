@@ -104,10 +104,12 @@ window.addEventListener('load', function() {
     window.new_game = new_game;
     new_game_from_image('levels/1.png');
 
-    save_btn.onclick = function() {
-        canvas.focus();
-        var filename = filename_input.value + '.png';
-        if (!filename) return;
+    function save_image(filename) {
+        var canvas = document.createElement('canvas');
+        canvas.width = game.width;
+        canvas.height = game.height;
+        draw_pixels_on_canvas(game.pixels, canvas);
+
         var data_url = canvas.toDataURL();
         var data_url_parts = data_url.split(',');
         var data = atob(data_url_parts[1]);
@@ -121,6 +123,13 @@ window.addEventListener('load', function() {
         link.download = filename;
         link.click();
         link.remove();
+    }
+
+    save_btn.onclick = function() {
+        canvas.focus();
+        var filename = filename_input.value + '.png';
+        if (!filename) return;
+        save_image(filename);
     };
 
     load_btn.onclick = function() {

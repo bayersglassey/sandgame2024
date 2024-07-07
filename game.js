@@ -279,10 +279,7 @@ class SandGame {
         }
 
         // Draw pixels onto canvas
-        var pixel_data = new Uint8ClampedArray(pixels.buffer);
-        var data = new ImageData(pixel_data, this.width, this.height);
-        var ctx = this.canvas.getContext('2d');
-        ctx.putImageData(data, 0, 0);
+        draw_pixels_on_canvas(pixels, this.canvas);
     }
 
     move_pixel(x0, y0, x1, y1) {
