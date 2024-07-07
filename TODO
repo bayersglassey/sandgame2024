@@ -55,4 +55,5 @@
       Currently we can save/load raw bytes, but can we do PNG? Yes.
       But we need to save various kinds of metadata, to... width, height,
       people, etc. I think we can just append a JSON blob to the raw PNG data?.. Yes.
-    * How are they tied together?.. do we connect them in a map?.. doors?.. goals?..
+    X How are they tied together?.. do we connect them in a map?.. doors?.. goals?..
+      ANSWER: Portals!

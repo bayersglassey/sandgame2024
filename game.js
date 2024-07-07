@@ -159,10 +159,12 @@ class SandGame {
         }
         this.keydown[event.keyCode] = true;
 
-        // Key is in 0-9 or a-z
-        var key = event.key.toLowerCase()
-        if (key in SELECT) {
-            this.select_material(SELECT[key]);
+        if (EDITOR_MODE) {
+            // Key is in 0-9 or a-z
+            var key = event.key.toLowerCase()
+            if (key in SELECT) {
+                this.select_material(SELECT[key]);
+            }
         }
 
         for (var person of this.people) person.onkeydown(event.keyCode);
@@ -214,6 +216,8 @@ class SandGame {
     }
 
     dropstuff() {
+        if (!EDITOR_MODE) return;
+
         var mx = this.mouse_x, x0 = mx, x1 = mx;
         var my = this.mouse_y, y0 = my, y1 = my;
 

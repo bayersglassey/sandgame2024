@@ -222,6 +222,7 @@ window.addEventListener('load', function() {
     play_mode_btn.onclick = function() {
         canvas.focus();
         EDITOR_MODE = false;
+        game.select_material(null);
         hide(editor_controls);
         show(play_controls);
     }
@@ -229,6 +230,7 @@ window.addEventListener('load', function() {
     editor_mode_btn.onclick = function() {
         canvas.focus();
         EDITOR_MODE = true;
+        game.select_material(SAND);
         hide(play_controls);
         show(editor_controls);
     }
