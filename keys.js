@@ -44,4 +44,5 @@ var SELECT = {
     w: WATERSPOUT,
     e: HOLE,
     r: OILSPOUT,
+    t: GLASS,
 };

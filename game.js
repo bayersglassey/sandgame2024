@@ -1,7 +1,7 @@
 'use strict';
 
 
-var TIME_UNITS_PER_DAY = 60 * 60 * 24;
+var TIME_UNITS_PER_DAY = 6000;
 var MIDNIGHT = 0;
 var DAWN = TIME_UNITS_PER_DAY * (1 / 4);
 var NOON = TIME_UNITS_PER_DAY * (2 / 4);
@@ -76,6 +76,8 @@ class SandGame {
         } else {
             this.pixels = pixels;
         }
+
+        this.sun = new Uint8Array(width * height);
 
         this.keydown = {};
         this.mousedown = false;
@@ -273,6 +275,9 @@ class SandGame {
         // without affecting our particular simulation
         var pixels = this.pixels.slice();
 
+        // Render sunlight!
+        this.render_sun(pixels);
+
         // Render portals to pixels
         var portal_color = get_portal_color(this.time);
         for (var portal of this.portals) {
@@ -283,6 +288,17 @@ class SandGame {
 
         // Draw pixels onto canvas
         draw_pixels_on_canvas(pixels, this.canvas);
+    }
+
+    render_sun(pixels) {
+        // NOTE: this is a temporary hack until we can render sunlight properly.
+        // It should not be a material.
+
+        var i1 = this.width * this.height - 1;
+        for (var i = 0; i <= i1; i++) {
+            var pixel = pixels[i];
+            if (pixel === NOTHING && this.sun[i]) pixels[i] = SUN;
+        }
     }
 
     move_pixel(x0, y0, x1, y1) {
@@ -400,9 +416,44 @@ class SandGame {
         // Person physics!
         for (var person of this.people) person.step();
 
+        // Light physics!
+        this.calculate_sun();
+
         // Render and continue!
         this.render();
         this.timeout_handle = setTimeout(this.step.bind(this), FRAMERATE);
+    }
+
+    calculate_sun() {
+        var time_percent = this.time / TIME_UNITS_PER_DAY;
+        var dx = 5 - (10 * time_percent);
+
+        this.sun.fill(0);
+
+        var x1 = this.width - 1;
+        var y1 = this.height - 1;
+        for (var x = 0; x <= x1; x++) {
+            var blocked = false;
+            var xwrap = 0;
+            for (var y = 0; y <= y1; y++) {
+                var _x = Math.floor(x + y * dx / 10) + xwrap;
+                if (_x < 0) {
+                    // Wrap around
+                    xwrap += this.width;
+                    _x += this.width;
+                    blocked = false;
+                } else if (_x >= this.width) {
+                    // Wrap around
+                    xwrap -= this.width;
+                    _x -= this.width;
+                    blocked = false;
+                }
+                var i = y * this.width + _x;
+                var pixel = this.pixels[i];
+                if (!blocked) this.sun[i] = 1;
+                if (!is_transparent(pixel)) blocked = true;
+            }
+        }
     }
 
     stop() {
