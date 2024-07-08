@@ -1,6 +1,11 @@
 'use strict';
 
 
+function get_timestamp() {
+    return Number(new Date());
+}
+
+
 function rgba(r, g, b, a) {
     var uint8 = new Uint8ClampedArray([r, g, b, a]);
     var uint32 = new Uint32Array(uint8.buffer);

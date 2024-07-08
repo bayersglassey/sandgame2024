@@ -1,6 +1,6 @@
 'use strict';
 
-var FRAMERATE = 15;
+var FRAMERATE = 30;
 var LOG_KEYS = false;
 var MAGIC = 'XXMAGICXX';
 var EDITOR_MODE = false;

@@ -70,6 +70,8 @@ class SandGame {
         this.time = gamedata.time;
         this.timeout_handle = null;
 
+        this.timestamp = get_timestamp();
+
         if (!pixels) {
             this.pixels = new Uint32Array(width * height);
             this.pixels.fill(NOTHING);
@@ -421,9 +423,15 @@ class SandGame {
         // Light physics!
         this.calculate_sun();
 
-        // Render and continue!
+        // Render!
         this.render();
-        this.timeout_handle = setTimeout(this.step.bind(this), FRAMERATE);
+
+        // Timing and stuff!
+        var new_timestamp = get_timestamp();
+        var took = new_timestamp - this.timestamp;
+        var delay = Math.max(0, FRAMERATE - took);
+        this.timestamp = new_timestamp;
+        this.timeout_handle = setTimeout(this.step.bind(this), delay);
     }
 
     calculate_sun() {

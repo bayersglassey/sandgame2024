@@ -1,10 +1,5 @@
 
 
-* Fix bugs
-    * The way FRAMERATE is used right now, we add it onto however much time
-      step + render already took!..
-
-
 * Better editor controls
     X Do the 5-pixel horiz line by default
         X Toggle single-pixel or column modes with keypresses (not holding ctrl/shift)
@@ -29,6 +24,7 @@
 
 * Add plants, animals, bugs
     * Fish & bears beside a stream, please
+    * Plants grow in the light, mushrooms in the dark
 
 * Finish Person
     X When you move, move your pixels too ;) 
@@ -49,6 +45,11 @@
     * Rain, sandstorm, wind
         * Combos?..
     * Sunshine?.. day/night?..
+      This is going ok, but need transparent sunlight plz.
+      And darkness & brightness should both be rendered transparently over
+      everything else.
+      Also, colours should change at dawn & dusk.
+      Also, need a nicer slope algorithm or whatever.
 
 * "Levels"
     X So, save images locally & serve 'em up!
