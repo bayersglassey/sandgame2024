@@ -305,14 +305,20 @@ class SandGame {
     }
 
     render_sun() {
-        // NOTE: this is a temporary hack until we can render sunlight properly.
-        // It should not be a material.
+
+        // TODO: there should be "keyframe" colour values for the different
+        // times of day (midnight -> dawn -> noon -> dusk), and we should
+        // interpolate between them.
+        // These values should be serialized in the levels.
+        // So should the min/max sun slope ("dx" stuff in calculate_sun).
+        var sun_mask = rgba(32, 69, 69, 69);
+        var shade_mask = rgba(229, 199, 199, 255);
 
         var pixels = this.render_pixels;
         var i1 = this.width * this.height - 1;
         for (var i = 0; i <= i1; i++) {
-            var pixel = pixels[i];
-            if (pixel === NOTHING && this.sun[i]) pixels[i] = SUN;
+            if (this.sun[i]) pixels[i] |= sun_mask;
+            else pixels[i] &= shade_mask;
         }
     }
 

@@ -2,7 +2,6 @@
 
 
 var NOTHING = 0;
-var SUN = rgba(255, 255, 255, 40);
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
@@ -18,7 +17,6 @@ var GLASS = rgba(180, 180, 225, 130);
 var TRANSPARENT = [NOTHING, WATER, HOLE, GLASS];
 var DENSITY = {
     [NOTHING]: 0,
-    [SUN]: 0,
     [SAND]: 3,
     [WATER]: 2,
     [OIL]: 1,

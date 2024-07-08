@@ -28,6 +28,7 @@ class GameTimer {
     }
 
     stats() {
+        if (!TIME_TRACKING) throw new Error("Turn on TIME_TRACKING");
         var stats = {};
         for (var key in this.times) {
             var times = this.times[key];

@@ -6,6 +6,21 @@ function get_timestamp() {
 }
 
 
+function linear_interpolate(x1, x2, t) {
+    return x1 + (x2 - x1) * t;
+}
+
+
+function linear_rgba(r1, g1, b1, a1, r2, g2, b2, a2, t) {
+    return rgba(
+        linear_interpolate(r1, r2, t),
+        linear_interpolate(g1, g2, t),
+        linear_interpolate(b1, b2, t),
+        linear_interpolate(a1, a2, t),
+    );
+}
+
+
 function rgba(r, g, b, a) {
     var uint8 = new Uint8ClampedArray([r, g, b, a]);
     var uint32 = new Uint32Array(uint8.buffer);
