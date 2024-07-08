@@ -15,7 +15,6 @@ var DEFAULT_PORTAL_HEIGHT = 16;
 var DEFAULT_GAMEDATA = {
     width: 300,
     height: 200,
-    zoom: 3,
     time: 0,
     people: [{}],
     portals: [],
@@ -59,7 +58,7 @@ class SandGame {
 
         var width = gamedata.width;
         var height = gamedata.height;
-        var zoom = gamedata.zoom;
+        var zoom = 4;
 
         // NOTE: pixels is an optional Uint32Array
         this.canvas = canvas;
@@ -309,10 +308,23 @@ class SandGame {
         // TODO: there should be "keyframe" colour values for the different
         // times of day (midnight -> dawn -> noon -> dusk), and we should
         // interpolate between them.
+        // (But then we probably need to do linear interpolation, not bitwise
+        // OR/AND.)
         // These values should be serialized in the levels.
         // So should the min/max sun slope ("dx" stuff in calculate_sun).
         var sun_mask = rgba(32, 69, 69, 69);
         var shade_mask = rgba(229, 199, 199, 255);
+        /*
+        var t = (this.time < NOON? this.time: TIME_UNITS_PER_DAY - this.time) / NOON;
+        var sun_mask = linear_rgba(
+            0, 0, 32, 33,
+            32, 69, 69, 69,
+            t);
+        var shade_mask = linear_rgba(
+            99, 0, 99, 255,
+            229, 199, 199, 255,
+            t);
+        */
 
         var pixels = this.render_pixels;
         var i1 = this.width * this.height - 1;
