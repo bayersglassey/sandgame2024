@@ -76,6 +76,7 @@ class SandGame {
         } else {
             this.pixels = pixels;
         }
+        this.render_pixels = new Uint32Array(width * height);
 
         this.sun = new Uint8Array(width * height);
 
@@ -271,29 +272,30 @@ class SandGame {
         // Render people to this.pixels
         for (var person of this.people) person.render_pixels();
 
-        // Create a copy of this.pixels, so we can draw more stuff
+        // Copy the data from this.pixels, so we can draw more stuff
         // without affecting our particular simulation
-        var pixels = this.pixels.slice();
+        this.render_pixels.set(this.pixels);
 
         // Render sunlight!
-        this.render_sun(pixels);
+        this.render_sun();
 
-        // Render portals to pixels
+        // Render portals!
         var portal_color = get_portal_color(this.time);
         for (var portal of this.portals) {
-            draw_rect(pixels, this.width,
+            draw_rect(this.render_pixels, this.width,
                 portal.x, portal.y, portal.width, portal.height,
                 portal_color);
         }
 
         // Draw pixels onto canvas
-        draw_pixels_on_canvas(pixels, this.canvas);
+        draw_pixels_on_canvas(this.render_pixels, this.canvas);
     }
 
-    render_sun(pixels) {
+    render_sun() {
         // NOTE: this is a temporary hack until we can render sunlight properly.
         // It should not be a material.
 
+        var pixels = this.render_pixels;
         var i1 = this.width * this.height - 1;
         for (var i = 0; i <= i1; i++) {
             var pixel = pixels[i];
