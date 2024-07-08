@@ -70,6 +70,9 @@ class SandGame {
         this.time = gamedata.time;
         this.timeout_handle = null;
 
+        this.step_timer = new GameTimer();
+        this.render_timer = new GameTimer();
+
         this.timestamp = get_timestamp();
 
         if (!pixels) {
@@ -271,15 +274,21 @@ class SandGame {
     }
 
     render() {
+        var timer = this.render_timer;
+        timer.start();
+
         // Render people to this.pixels
         for (var person of this.people) person.render_pixels();
+        timer.mark('render_people');
 
         // Copy the data from this.pixels, so we can draw more stuff
         // without affecting our particular simulation
         this.render_pixels.set(this.pixels);
+        timer.mark('copy_pixels');
 
         // Render sunlight!
         this.render_sun();
+        timer.mark('render_sun');
 
         // Render portals!
         var portal_color = get_portal_color(this.time);
@@ -288,9 +297,11 @@ class SandGame {
                 portal.x, portal.y, portal.width, portal.height,
                 portal_color);
         }
+        timer.mark('render_portals');
 
         // Draw pixels onto canvas
         draw_pixels_on_canvas(this.render_pixels, this.canvas);
+        timer.mark('draw_canvas');
     }
 
     render_sun() {
@@ -324,7 +335,11 @@ class SandGame {
     step() {
         if (this.portal_activated) return;
 
+        var timer = this.step_timer;
+        timer.start();
+
         if (this.mousedown) { this.dropstuff(); }
+        timer.mark('dropstuff');
 
         // Tick... tick... tick...
         this.time = (this.time + 1) % TIME_UNITS_PER_DAY;
@@ -340,9 +355,11 @@ class SandGame {
                 weather.age++;
             }
         }
+        timer.mark('weathers');
 
         // Game physics!
         shuffle(this.indexes);
+        timer.mark('shuffle_indexes');
         for (var i of this.indexes) {
             var x = i % this.width;
             var y = Math.floor(i / this.width);
@@ -416,15 +433,19 @@ class SandGame {
                 }
             }
         }
+        timer.mark('particle_physics');
 
         // Person physics!
         for (var person of this.people) person.step();
+        timer.mark('people');
 
         // Light physics!
         this.calculate_sun();
+        timer.mark('sun');
 
         // Render!
         this.render();
+        timer.mark('render');
 
         // Timing and stuff!
         var new_timestamp = get_timestamp();
@@ -432,6 +453,7 @@ class SandGame {
         var delay = Math.max(0, FRAMERATE - took);
         this.timestamp = new_timestamp;
         this.timeout_handle = setTimeout(this.step.bind(this), delay);
+        timer.mark('timing');
     }
 
     calculate_sun() {
