@@ -36,7 +36,9 @@ class DroppingWeather extends Weather {
             var x = Math.floor(Math.random() * game.width);
             var y = Math.floor(Math.random() * game.height);
             var i = y * game.width + x;
-            if (game.pixels[i] === NOTHING) game.pixels[i] = this.material;
+            if (game.pixels[i] !== NOTHING) continue;
+            if (!game.sun[i]) continue;
+            game.pixels[i] = this.material;
         }
     }
 }
