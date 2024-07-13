@@ -2,6 +2,19 @@
 * Materials
     * Add a Material class, instead of separate global structures like DENSITY etc
     * Wind (pushes things sideways, maybe similar to how Person pushes)
+        * Wind doesn't currently push rain. I think we need WIND particles,
+          plus a global wind speed/direction, e.g. wind_dx.
+          And then we can add a RAIN material, which moves like WIND, except
+          that when it touches anything else, it turns into WATER?..
+          Except that rain's horizontal and vertical movement should really be
+          combined somehow.
+          Does RAIN do push_x like WIND?.. nahhh.
+          So RAIN's behaviour is totally unique, I think.
+    * Solidity should be a *probability* of person to get through.
+      NOTHING: 0
+      WATER: .5
+      SAND: .75
+      STONE: 1
 
 * Add plants, animals, bugs
     * Fish & bears beside a stream, please

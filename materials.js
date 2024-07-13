@@ -2,9 +2,11 @@
 
 
 var NOTHING = 0;
+var WIND = rgba(255, 255, 225, 90);
 var SAND = rgb(170, 130, 70);
 var STONE = rgb(120, 120, 120);
 var WATER = rgb(20, 80, 255);
+var RAIN = rgba(20, 80, 255, 125);
 var OIL = rgb(20, 180, 200);
 var SANDSPOUT = rgb(120, 80, 20);
 var WATERSPOUT = rgb(0, 30, 205);
@@ -14,18 +16,20 @@ var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(120, 80, 40);
 var WOOD = rgb(255, 125, 125);
 var GLASS = rgba(180, 180, 225, 130);
-var TRANSPARENT = [NOTHING, WATER, HOLE, GLASS];
+var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS];
 var DENSITY = {
     [NOTHING]: 0,
-    [SAND]: 3,
-    [WATER]: 2,
-    [OIL]: 1,
+    [WIND]: 1,
+    [SAND]: 9,
+    [WATER]: 8,
+    [RAIN]: 1,
+    [OIL]: 7,
     [STONE]: 99,
     [SANDSPOUT]: 99,
     [WATERSPOUT]: 99,
     [OILSPOUT]: 99,
-    [HOLE]: 3,
-    [WOOD]: 3,
+    [HOLE]: 9,
+    [WOOD]: 9,
     [GLASS]: 99,
 };
 var SOLID = [SAND, STONE, SANDSPOUT, WATERSPOUT, OILSPOUT, HOLE, SKIN, CLOTHES, WOOD, GLASS];
@@ -42,7 +46,7 @@ var SPOUTS = {
     [OILSPOUT]: OIL,
 };
 var EATS = {
-    [HOLE]: [SAND, WATER, OIL, HOLE],
+    [HOLE]: [SAND, WATER, RAIN, OIL, HOLE],
 };
 
 

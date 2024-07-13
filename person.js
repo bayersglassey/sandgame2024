@@ -125,33 +125,6 @@ class Person {
         this.push_x(dx);
     }
 
-    push_x(dx) {
-        var y0 = this.y;
-        var y1 = this.y - (this.height - 1);
-        for (var y = y0; y >= y1; y--) {
-            var x0 = this.x + dx;
-            var prev_pixel;
-            var pixel = NOTHING;
-            for (
-                var x = x0;
-                (
-                    prev_pixel = pixel,
-                    pixel = this.game.get_pixel(x, y),
-                    get_density(pixel) > 0 && (
-                        is_pushable(pixel) ||
-                        is_denser_or_equal(prev_pixel, pixel)
-                    )
-                );
-                x += dx
-            );
-            if (get_density(pixel) > 0) continue;
-            var x1 = x;
-            for (var x = x1; x !== x0; x -= dx) {
-                this.game.swap_pixel(x, y, x - dx, y);
-            }
-        }
-    }
-
     move_y(dy) {
         // Attempt to move 1 pixel up/down
 
@@ -179,31 +152,18 @@ class Person {
         this.y += dy;
     }
 
-    push_y(dy) {
-        var x = this.x;
+    push_x(dx) {
+        var y0 = this.y;
+        var y1 = this.y - (this.height - 1);
+        for (var y = y0; y >= y1; y--) {
+            this.game.push_x(this.x + dx, y, dx);
+        }
+    }
 
+    push_y(dy) {
         var y0 = this.y + dy;
         if (dy < 0) y0 -= this.height - 1;
-
-        var prev_pixel;
-        var pixel = NOTHING;
-        for (
-            var y = y0;
-            (
-                prev_pixel = pixel,
-                pixel = this.game.get_pixel(x, y),
-                get_density(pixel) > 0 && (
-                    is_pushable(pixel) ||
-                    is_denser_or_equal(prev_pixel, pixel)
-                )
-            );
-            y += dy
-        );
-        if (get_density(pixel) > 0) return;
-        var y1 = y;
-        for (var y = y1; y !== y0; y -= dy) {
-            this.game.swap_pixel(x, y, x, y - dy);
-        }
+        this.game.push_x(this.x, y0, dy);
     }
 
     onkeydown(keycode) {

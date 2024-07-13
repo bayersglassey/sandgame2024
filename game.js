@@ -84,6 +84,8 @@ class SandGame {
 
         this.sun = new Uint8Array(width * height);
 
+        this.wind_dx = 1; // can be +/- 1
+
         this.keydown = {};
         this.mousedown = false;
         this.mouse_x = 0;
@@ -272,6 +274,52 @@ class SandGame {
         this.set_pixel(x1, y1, pixel0);
     }
 
+    push_x(x0, y0, dx) {
+        var y = y0;
+        var prev_pixel;
+        var pixel = NOTHING;
+        for (
+            var x = x0;
+            (
+                prev_pixel = pixel,
+                pixel = this.get_pixel(x, y),
+                get_density(pixel) > 0 && (
+                    is_pushable(pixel) ||
+                    is_denser_or_equal(prev_pixel, pixel)
+                )
+            );
+            x += dx
+        );
+        if (get_density(pixel) > 0) return;
+        var x1 = x;
+        for (var x = x1; x !== x0; x -= dx) {
+            this.swap_pixel(x, y, x - dx, y);
+        }
+    }
+
+    push_y(x0, y0, dy) {
+        var x = x0;
+        var prev_pixel;
+        var pixel = NOTHING;
+        for (
+            var y = y0;
+            (
+                prev_pixel = pixel,
+                pixel = this.get_pixel(x, y),
+                get_density(pixel) > 0 && (
+                    is_pushable(pixel) ||
+                    is_denser_or_equal(prev_pixel, pixel)
+                )
+            );
+            y += dy
+        );
+        if (get_density(pixel) > 0) return;
+        var y1 = y;
+        for (var y = y1; y !== y0; y -= dy) {
+            this.swap_pixel(x, y, x, y - dy);
+        }
+    }
+
     render() {
         var timer = this.render_timer;
         timer.start();
@@ -334,13 +382,18 @@ class SandGame {
         }
     }
 
-    move_pixel(x0, y0, x1, y1) {
+    move_pixel(x0, y0, x1, y1, move_if_equal) {
+        move_if_equal = move_if_equal || false;
         var pixel0 = this.get_pixel(x0, y0);
         var pixel1 = this.get_pixel(x1, y1);
         if (eats(pixel1, pixel0)) {
             this.set_pixel(x0, y0, NOTHING);
             return true;
-        } else if (is_denser(pixel0, pixel1)) {
+        } else if (
+            move_if_equal?
+            is_denser_or_equal(pixel0, pixel1):
+            is_denser(pixel0, pixel1)
+        ) {
             // Equivalent to: this.swap_pixel(x0, y0, x1, y1)
             this.set_pixel(x0, y0, pixel1);
             this.set_pixel(x1, y1, pixel0);
@@ -382,6 +435,26 @@ class SandGame {
             var x = i % this.width;
             var y = Math.floor(i / this.width);
             var material = this.pixels[i];
+
+            // Wind & rain physics
+            if (material === WIND) {
+                var dx = this.wind_dx;
+                this.push_x(x + dx, y, dx);
+                if (!this.move_pixel(x, y, x + dx, y, true)) {
+                    // Wind disappears when it hits something it can't push
+                    this.pixels[i] = NOTHING;
+                }
+            } else if (material === RAIN) {
+                var dx = this.wind_dx;
+                if (!this.move_pixel(x, y, x + dx, y + 1, true)) {
+                    // Rain turns into water when it hits something denser
+                    // than itself
+                    this.pixels[i] = WATER;
+                }
+            }
+
+            // Don't do anything more with this pixel if it moved!
+            if (this.pixels[i] !== material) continue;
 
             // Falling physics
             if (does_fall(material)) {

@@ -45,9 +45,13 @@ class DroppingWeather extends Weather {
 
 
 class Rain extends DroppingWeather {
-    material = WATER;
+    material = RAIN;
 }
 
 class SandStorm extends DroppingWeather {
     material = SAND;
+}
+
+class Wind extends DroppingWeather {
+    material = WIND;
 }
