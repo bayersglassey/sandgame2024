@@ -115,6 +115,9 @@ class Person {
             for (var y = y0; y <= y1; y++) {
                 this.game.swap_pixel(x, y, x + dx, y + dy);
             }
+            if (this.keydown.u) for (var y = y0; y <= y1; y++) {
+                this.game.pull_x(x, y, dx);
+            }
             this.x += dx;
             this.y += dy;
             return;

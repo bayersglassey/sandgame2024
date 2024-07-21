@@ -320,6 +320,20 @@ class SandGame {
         }
     }
 
+    pull_x(x0, y0, dx) {
+        var x = x0;
+        var y = y0;
+        var pixel, pulled_pixel;
+        while(
+            pixel = this.get_pixel(x, y),
+            pulled_pixel = this.get_pixel(x - dx, y),
+            is_pushable(pulled_pixel) && is_denser_or_equal(pulled_pixel, pixel)
+        ) {
+            this.swap_pixel(x - dx, y, x, y);
+            x -= dx;
+        }
+    }
+
     render() {
         var timer = this.render_timer;
         timer.start();
