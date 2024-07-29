@@ -400,6 +400,21 @@ class SandGame {
         move_if_equal = move_if_equal || false;
         var pixel0 = this.get_pixel(x0, y0);
         var pixel1 = this.get_pixel(x1, y1);
+
+        var transforms = TRANSFORMS[pixel0] && TRANSFORMS[pixel0][pixel1];
+        if (transforms) {
+            // E.g. pixel0 is WATER and pixel1 is SEED
+            var sun = this.sun[y1 * this.width + x1];
+            if (
+                (!transforms.only_light || sun) &&
+                (!transforms.only_dark || !sun)
+            ) {
+                this.set_pixel(x0, y0, NOTHING);
+                this.set_pixel(x1, y1, transforms.material);
+                return true;
+            }
+        }
+
         if (eats(pixel1, pixel0)) {
             this.set_pixel(x0, y0, NOTHING);
             return true;
@@ -470,28 +485,37 @@ class SandGame {
             // Don't do anything more with this pixel if it moved!
             if (this.pixels[i] !== material) continue;
 
-            // Falling physics
+            var dy = 0;
             if (does_fall(material)) {
+                dy = 1;
+            } else if (does_waft(material)) {
+                var r = Math.random();
+                if (r < .3) dy = 1;
+                else if (r < .6) dy = -1;
+            }
+
+            // Falling/wafting physics
+            if (dy) {
                 var supported = (
                     (
                         supports(this.get_pixel(x - 1, y), material) &&
                         supports(this.get_pixel(x + 1, y), material)
                     ) ||
-                    supports(this.get_pixel(x - 1, y - 1), material) ||
-                    supports(this.get_pixel(x + 1, y - 1), material)
+                    supports(this.get_pixel(x - 1, y - dy), material) ||
+                    supports(this.get_pixel(x + 1, y - dy), material)
                 );
                 if (supported) {
                     // Don't fall!
-                } else if (this.move_pixel(x, y, x, y + 1)) {
-                    // We fell straight down
+                } else if (this.move_pixel(x, y, x, y + dy)) {
+                    // We fell straight up/down
                 } else if (!does_fall_straight(material)) {
                     if (Math.random() < .5) {
-                        if (this.move_pixel(x, y, x - 1, y + 1)) {
-                            // We fell down and to the left
+                        if (this.move_pixel(x, y, x - 1, y + dy)) {
+                            // We fell up/down and to the left
                         }
                     } else {
-                        if (this.move_pixel(x, y, x + 1, y + 1)) {
-                            // We fell down and to the right
+                        if (this.move_pixel(x, y, x + 1, y + dy)) {
+                            // We fell up/down and to the right
                         }
                     }
                 }

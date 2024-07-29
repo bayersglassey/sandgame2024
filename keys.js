@@ -39,10 +39,12 @@ var SELECT = {
     3: STONE,
     4: OIL,
     5: WOOD,
+    6: SEED,
 
     q: SANDSPOUT,
     w: WATERSPOUT,
     e: HOLE,
     r: OILSPOUT,
     t: GLASS,
+    y: SPORE,
 };
