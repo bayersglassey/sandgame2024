@@ -36,9 +36,9 @@ var DENSITY = {
     [WOOD]: 9,
     [GLASS]: 99,
     [SEED]: 9,
-    [PLANT]: 99,
+    [PLANT]: 9,
     [SPORE]: 1,
-    [MUSHROOM]: 99,
+    [MUSHROOM]: 9,
 };
 var SOLID = [
     SAND,
@@ -55,14 +55,16 @@ var SOLID = [
     PLANT,
     MUSHROOM,
 ];
-var FALLS = [SAND, WATER, OIL, HOLE, WOOD, SEED];
+var FALLS = [SAND, WATER, OIL, HOLE, WOOD, SEED, PLANT, MUSHROOM];
 var FALLS_STRAIGHT = [WOOD];
 var WAFTS = [SPORE];
 var SUPPORTS = {
     [WOOD]: [WOOD],
+    [PLANT]: [PLANT],
+    [MUSHROOM]: [MUSHROOM],
 };
 var FLUID = [WATER, OIL, SPORE];
-var PUSHABLE = [SAND, WOOD, SEED];
+var PUSHABLE = [SAND, WOOD, SEED, PLANT, MUSHROOM];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
     [WATERSPOUT]: WATER,
