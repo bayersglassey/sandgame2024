@@ -409,7 +409,13 @@ class SandGame {
                 (!transforms.only_light || sun) &&
                 (!transforms.only_dark || !sun)
             ) {
-                this.set_pixel(x0, y0, NOTHING);
+                var grow_chance = transforms.grow_chance;
+                if (grow_chance && Math.random() < grow_chance) {
+                    // Grow!
+                    this.set_pixel(x0, y0, pixel1);
+                } else if (!transforms.remain) {
+                    this.set_pixel(x0, y0, NOTHING);
+                }
                 this.set_pixel(x1, y1, transforms.material);
                 return true;
             }
@@ -465,6 +471,13 @@ class SandGame {
             var y = Math.floor(i / this.width);
             var material = this.pixels[i];
 
+            // Randomly become something else?..
+            var becomes = BECOMES[material];
+            if (becomes && Math.random() < becomes.chance) {
+                this.set_pixel(x, y, becomes.material);
+                continue;
+            }
+
             // Wind & rain physics
             if (material === WIND) {
                 var dx = this.wind_dx;
@@ -486,12 +499,12 @@ class SandGame {
             if (this.pixels[i] !== material) continue;
 
             var dy = 0;
-            if (does_fall(material)) {
-                dy = 1;
-            } else if (does_waft(material)) {
+            if (does_waft(material)) {
                 var r = Math.random();
                 if (r < .3) dy = 1;
                 else if (r < .6) dy = -1;
+            } else {
+                dy = get_fall_dy(material);
             }
 
             // Falling/wafting physics

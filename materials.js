@@ -20,7 +20,10 @@ var SEED = rgb(170, 230, 70);
 var PLANT = rgb(70, 200, 70);
 var SPORE = rgb(110, 120, 130);
 var MUSHROOM = rgb(230, 240, 250);
-var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE];
+var FIRE1 = rgba(255, 120, 20, 200);
+var FIRE2 = rgba(220, 0, 0, 200);
+var SMOKE = rgba(180, 180, 180, 130);
+var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2];
 var DENSITY = {
     [NOTHING]: 0,
     [WIND]: 1,
@@ -39,6 +42,9 @@ var DENSITY = {
     [PLANT]: 9,
     [SPORE]: 1,
     [MUSHROOM]: 9,
+    [FIRE1]: 2,
+    [FIRE2]: 2,
+    [SMOKE]: 1,
 };
 var SOLID = [
     SAND,
@@ -56,14 +62,20 @@ var SOLID = [
     MUSHROOM,
 ];
 var FALLS = [SAND, WATER, OIL, HOLE, WOOD, SEED, PLANT, MUSHROOM];
+var FALLS_UP = [SMOKE];
 var FALLS_STRAIGHT = [WOOD];
-var WAFTS = [SPORE];
+var WAFTS = [SPORE, FIRE1, FIRE2];
+var BECOMES = {
+    [FIRE1]: {chance: .025, material: FIRE2},
+    [FIRE2]: {chance: .01, material: SMOKE},
+    [SMOKE]: {chance: .005, material: NOTHING},
+};
 var SUPPORTS = {
     [WOOD]: [WOOD],
     [PLANT]: [PLANT],
     [MUSHROOM]: [MUSHROOM],
 };
-var FLUID = [WATER, OIL, SPORE];
+var FLUID = [WATER, OIL, SPORE, FIRE1, FIRE2, SMOKE];
 var PUSHABLE = [SAND, WOOD, SEED, PLANT, MUSHROOM];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
@@ -72,12 +84,30 @@ var SPOUTS = {
 };
 var TRANSFORMS = {
     [WATER]: {
-        [SEED]: {material: PLANT, only_light: true},
-        [SPORE]: {material: MUSHROOM, only_dark: true},
+        [SEED]: {material: PLANT, only_light: true, grow_chance: .98},
+        [SPORE]: {material: MUSHROOM, only_dark: true, grow_chance: .85},
+        [FIRE1]: {material: SMOKE},
+        [FIRE2]: {material: SMOKE},
+    },
+    [FIRE1]: {
+        [OIL]: {material: FIRE1, remain: true},
+        [WOOD]: {material: FIRE1, remain: true},
+        [SEED]: {material: FIRE1, remain: true},
+        [SPORE]: {material: FIRE1, remain: true},
+        [PLANT]: {material: FIRE1, remain: true},
+        [MUSHROOM]: {material: FIRE1, remain: true},
+    },
+    [FIRE2]: {
+        [OIL]: {material: FIRE1, remain: true},
+        [WOOD]: {material: FIRE1, remain: true},
+        [SEED]: {material: FIRE1, remain: true},
+        [SPORE]: {material: FIRE1, remain: true},
+        [PLANT]: {material: FIRE1, remain: true},
+        [MUSHROOM]: {material: FIRE1, remain: true},
     },
 };
 var EATS = {
-    [HOLE]: [SAND, WATER, RAIN, OIL, HOLE, SEED, SPORE],
+    [HOLE]: [SAND, WATER, RAIN, OIL, HOLE, SEED, SPORE, FIRE1, FIRE2, SMOKE],
 };
 
 
@@ -109,8 +139,10 @@ function is_solid(material) {
     return SOLID.indexOf(material) >= 0;
 }
 
-function does_fall(material) {
-    return FALLS.indexOf(material) >= 0;
+function get_fall_dy(material) {
+    if (FALLS.indexOf(material) >= 0) return 1;
+    else if (FALLS_UP.indexOf(material) >= 0) return -1;
+    else return 0;
 }
 
 function does_fall_straight(material) {

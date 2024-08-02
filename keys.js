@@ -40,6 +40,7 @@ var SELECT = {
     4: OIL,
     5: WOOD,
     6: SEED,
+    7: FIRE1,
 
     q: SANDSPOUT,
     w: WATERSPOUT,
@@ -47,4 +48,5 @@ var SELECT = {
     r: OILSPOUT,
     t: GLASS,
     y: SPORE,
+    u: SMOKE,
 };

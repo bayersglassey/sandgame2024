@@ -10,11 +10,16 @@
           combined somehow.
           Does RAIN do push_x like WIND?.. nahhh.
           So RAIN's behaviour is totally unique, I think.
-    * Solidity should be a *probability* of person to get through.
+    * Solidity should be something like a *probability* of person to get through.
       NOTHING: 0
-      WATER: .5
+      WATER: .25
+      OIL: .5
       SAND: .75
       STONE: 1
+      ...hmmm, didn't quite work. E.g. the "walking up a slope" doesn't make
+      sense anymore.
+      I think we need separate concepts of solidity and... viscosity?.. which
+      slows people down.
 
 * Add plants, animals, bugs
     * Fish & bears beside a stream, please
@@ -40,6 +45,6 @@
       Colours should interpolate between keyframe colours for each of the
       4 stages of the day.
       Also, need a nicer slope algorithm or whatever.
-    * Heat/cold/wetness/etc of person.
+    * Heat/cold/wetness/hunger/etc of person.
       Each level can specify the temperature of its sun at each of the 4
       stages of the day.
