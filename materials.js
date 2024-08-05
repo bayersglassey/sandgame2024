@@ -63,9 +63,9 @@ var SOLID = [
     PLANT,
     MUSHROOM,
 ];
-var FALLS = [SAND, WATER, OIL, HOLE, WOOD, SEED, PLANT, MUSHROOM];
+var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, MUSHROOM];
 var FALLS_UP = [SMOKE, STEAM];
-var FALLS_STRAIGHT = [WOOD];
+var FALLS_STRAIGHT = [];
 var WAFTS = [SPORE, FIRE1, FIRE2];
 var BECOMES = {
     [FIRE1]: {chance: .025, material: FIRE2},
@@ -75,7 +75,6 @@ var BECOMES = {
     [STEAM]: {chance: .005, material: WATER},
 };
 var SUPPORTS = {
-    [WOOD]: [WOOD],
     [PLANT]: [PLANT],
     [MUSHROOM]: [MUSHROOM],
 };
