@@ -23,13 +23,14 @@ var MUSHROOM = rgb(230, 240, 250);
 var FIRE1 = rgba(255, 120, 20, 200);
 var FIRE2 = rgba(220, 0, 0, 200);
 var SMOKE = rgba(180, 180, 180, 130);
-var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2];
+var STEAM = rgba(180, 180, 255, 130);
+var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2, STEAM];
 var DENSITY = {
     [NOTHING]: 0,
     [WIND]: 1,
     [SAND]: 9,
     [WATER]: 8,
-    [RAIN]: 1,
+    [RAIN]: 2,
     [OIL]: 7,
     [STONE]: 99,
     [SANDSPOUT]: 99,
@@ -40,11 +41,12 @@ var DENSITY = {
     [GLASS]: 99,
     [SEED]: 9,
     [PLANT]: 9,
-    [SPORE]: 1,
+    [SPORE]: 2,
     [MUSHROOM]: 9,
-    [FIRE1]: 2,
-    [FIRE2]: 2,
-    [SMOKE]: 1,
+    [FIRE1]: 3,
+    [FIRE2]: 3,
+    [SMOKE]: 2,
+    [STEAM]: 1,
 };
 var SOLID = [
     SAND,
@@ -62,20 +64,22 @@ var SOLID = [
     MUSHROOM,
 ];
 var FALLS = [SAND, WATER, OIL, HOLE, WOOD, SEED, PLANT, MUSHROOM];
-var FALLS_UP = [SMOKE];
+var FALLS_UP = [SMOKE, STEAM];
 var FALLS_STRAIGHT = [WOOD];
 var WAFTS = [SPORE, FIRE1, FIRE2];
 var BECOMES = {
     [FIRE1]: {chance: .025, material: FIRE2},
     [FIRE2]: {chance: .01, material: SMOKE},
     [SMOKE]: {chance: .005, material: NOTHING},
+    [WATER]: {chance: .0005, only_light: true, material: STEAM},
+    [STEAM]: {chance: .005, material: WATER},
 };
 var SUPPORTS = {
     [WOOD]: [WOOD],
     [PLANT]: [PLANT],
     [MUSHROOM]: [MUSHROOM],
 };
-var FLUID = [WATER, OIL, SPORE, FIRE1, FIRE2, SMOKE];
+var FLUID = [WATER, OIL, SPORE, FIRE1, FIRE2, SMOKE, STEAM];
 var PUSHABLE = [SAND, WOOD, SEED, PLANT, MUSHROOM];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
@@ -86,8 +90,8 @@ var TRANSFORMS = {
     [WATER]: {
         [SEED]: {material: PLANT, only_light: true, grow_chance: .98},
         [SPORE]: {material: MUSHROOM, only_dark: true, grow_chance: .85},
-        [FIRE1]: {material: SMOKE},
-        [FIRE2]: {material: SMOKE},
+        [FIRE1]: {material: STEAM},
+        [FIRE2]: {material: STEAM},
     },
     [FIRE1]: {
         [OIL]: {material: FIRE1, remain: true},
@@ -107,7 +111,7 @@ var TRANSFORMS = {
     },
 };
 var EATS = {
-    [HOLE]: [SAND, WATER, RAIN, OIL, HOLE, SEED, SPORE, FIRE1, FIRE2, SMOKE],
+    [HOLE]: [SAND, WATER, RAIN, OIL, HOLE, SEED, SPORE, FIRE1, FIRE2, SMOKE, STEAM],
 };
 
 

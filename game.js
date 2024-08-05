@@ -474,8 +474,14 @@ class SandGame {
             // Randomly become something else?..
             var becomes = BECOMES[material];
             if (becomes && Math.random() < becomes.chance) {
-                this.set_pixel(x, y, becomes.material);
-                continue;
+                var sun = this.sun[i];
+                if (
+                    (!becomes.only_light || sun) &&
+                    (!becomes.only_dark || !sun)
+                ) {
+                    this.set_pixel(x, y, becomes.material);
+                    continue;
+                }
             }
 
             // Wind & rain physics
