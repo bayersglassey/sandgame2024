@@ -18,6 +18,7 @@ var DEFAULT_GAMEDATA = {
     time: 0,
     people: [{}],
     portals: [],
+    hwrap: true,
 };
 
 
@@ -45,10 +46,11 @@ class Portal {
 
 class SandGame {
     SERIALIZE_FIELDS = ['width', 'height', 'zoom',
-        'people', 'portals', 'time'];
+        'people', 'portals', 'time', 'hwrap'];
 
     constructor(canvas, pixels, gamedata, image_url) {
-        gamedata = gamedata || {};
+        if (gamedata) gamedata = Object.assign({}, gamedata);
+        else gamedata = {};
 
         // Get default values for gamedata fields
         for (var key of this.SERIALIZE_FIELDS) {
@@ -68,6 +70,7 @@ class SandGame {
         this.image_url = image_url || null;
         this.time = gamedata.time;
         this.timeout_handle = null;
+        this.hwrap = gamedata.hwrap;
 
         this.step_timer = new GameTimer();
         this.render_timer = new GameTimer();
@@ -253,17 +256,27 @@ class SandGame {
         this.render();
     }
 
+    get_pixel_index(x, y) {
+        if (y < 0 || y >= this.height) return -1;
+        if (x < 0) {
+            if (this.hwrap) x += this.width;
+            else return -1;
+        } else if (x >= this.width) {
+            if (this.hwrap) x -= this.width;
+            else return -1;
+        }
+        return y * this.width + x;
+    }
+
     get_pixel(x, y) {
-        if (x < 0 || x >= this.width) return STONE;
-        if (y < 0 || y >= this.height) return STONE;
-        var i = y * this.width + x;
+        var i = this.get_pixel_index(x, y);
+        if (i < 0) return STONE;
         return this.pixels[i];
     }
 
     set_pixel(x, y, value) {
-        if (x < 0 || x >= this.width) return;
-        if (y < 0 || y >= this.height) return;
-        var i = y * this.width + x;
+        var i = this.get_pixel_index(x, y);
+        if (i < 0) return;
         this.pixels[i] = value;
     }
 

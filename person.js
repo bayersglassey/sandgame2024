@@ -92,8 +92,7 @@ class Person {
                 continue;
             }
             if (y < 0 || y >= height) return true;
-            var i = y * width + x;
-            if (is_solid(pixels[i])) return true;
+            if (is_solid(this.game.get_pixel(x, y))) return true;
         }
         return false;
     }
