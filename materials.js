@@ -11,6 +11,7 @@ var OIL = rgb(20, 180, 200);
 var SANDSPOUT = rgb(120, 80, 20);
 var WATERSPOUT = rgb(0, 30, 205);
 var OILSPOUT = rgb(0, 130, 150);
+var SEEDSPOUT = rgb(70, 130, 0);
 var HOLE = rgb(60, 60, 60);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(120, 80, 40);
@@ -23,7 +24,7 @@ var MUSHROOM = rgb(230, 240, 250);
 var FIRE1 = rgba(255, 120, 20, 200);
 var FIRE2 = rgba(220, 0, 0, 200);
 var SMOKE = rgba(180, 180, 180, 130);
-var STEAM = rgba(180, 180, 255, 130);
+var STEAM = rgba(180, 180, 255, 90);
 var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2, STEAM];
 var DENSITY = {
     [NOTHING]: 0,
@@ -41,6 +42,7 @@ var DENSITY = {
     [GLASS]: 99,
     [SEED]: 9,
     [PLANT]: 9,
+    [SEEDSPOUT]: 9,
     [SPORE]: 2,
     [MUSHROOM]: 9,
     [FIRE1]: 3,
@@ -61,11 +63,12 @@ var SOLID = [
     GLASS,
     SEED,
     PLANT,
+    SEEDSPOUT,
     MUSHROOM,
 ];
-var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, MUSHROOM];
+var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, SEEDSPOUT, MUSHROOM];
 var FALLS_UP = [SMOKE, STEAM];
-var FALLS_STRAIGHT = [];
+var FALLS_STRAIGHT = [SEEDSPOUT];
 var WAFTS = [SPORE, FIRE1, FIRE2];
 var BECOMES = {
     [FIRE1]: {chance: .025, material: FIRE2},
@@ -77,13 +80,15 @@ var BECOMES = {
 var SUPPORTS = {
     [PLANT]: [PLANT],
     [MUSHROOM]: [MUSHROOM],
+    [SEEDSPOUT]: [SEEDSPOUT],
 };
 var FLUID = [WATER, OIL, SPORE, FIRE1, FIRE2, SMOKE, STEAM];
-var PUSHABLE = [SAND, WOOD, SEED, PLANT, MUSHROOM];
+var PUSHABLE = [SAND, WOOD, SEED, PLANT, SEEDSPOUT, MUSHROOM];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
     [WATERSPOUT]: WATER,
     [OILSPOUT]: OIL,
+    [SEEDSPOUT]: SEED,
 };
 var TRANSFORMS = {
     [WATER]: {
