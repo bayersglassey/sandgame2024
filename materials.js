@@ -25,7 +25,9 @@ var FIRE1 = rgba(255, 120, 20, 200);
 var FIRE2 = rgba(220, 0, 0, 200);
 var SMOKE = rgba(180, 180, 180, 130);
 var STEAM = rgba(180, 180, 255, 90);
-var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2, STEAM];
+var APHID = rgba(0, 255, 100, 200);
+var FLEA = rgba(200, 150, 10, 200);
+var TRANSPARENT = [NOTHING, WIND, WATER, RAIN, HOLE, GLASS, SPORE, FIRE1, FIRE2, STEAM, APHID, FLEA];
 var DENSITY = {
     [NOTHING]: 0,
     [WIND]: 1,
@@ -49,6 +51,8 @@ var DENSITY = {
     [FIRE2]: 3,
     [SMOKE]: 2,
     [STEAM]: 1,
+    [APHID]: 9,
+    [FLEA]: 9,
 };
 var SOLID = [
     SAND,
@@ -65,11 +69,22 @@ var SOLID = [
     PLANT,
     SEEDSPOUT,
     MUSHROOM,
+    APHID,
+    FLEA,
 ];
-var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, SEEDSPOUT, MUSHROOM];
+var GRIPPABLE = [SAND, STONE, SANDSPOUT, WATERSPOUT, SKIN, CLOTHES, WOOD, SEED, PLANT, MUSHROOM];
+var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, SEEDSPOUT, MUSHROOM, APHID, FLEA];
 var FALLS_UP = [SMOKE, STEAM];
 var FALLS_STRAIGHT = [SEEDSPOUT];
 var WAFTS = [SPORE, FIRE1, FIRE2];
+var STICKS = {
+    [APHID]: {chance: .995},
+    [FLEA]: {chance: .99},
+};
+var CRAWLS = {
+    [APHID]: {chance: .1},
+    [FLEA]: {chance: .5, jumps: true},
+};
 var BECOMES = {
     [FIRE1]: {chance: .025, material: FIRE2},
     [FIRE2]: {chance: .01, material: SMOKE},
@@ -83,7 +98,7 @@ var SUPPORTS = {
     [SEEDSPOUT]: [SEEDSPOUT],
 };
 var FLUID = [WATER, OIL, SPORE, FIRE1, FIRE2, SMOKE, STEAM];
-var PUSHABLE = [SAND, WOOD, SEED, PLANT, SEEDSPOUT, MUSHROOM];
+var PUSHABLE = [SAND, WOOD, SEED, PLANT, SEEDSPOUT, MUSHROOM, APHID, FLEA];
 var SPOUTS = {
     [SANDSPOUT]: SAND,
     [WATERSPOUT]: WATER,
@@ -112,6 +127,9 @@ var TRANSFORMS = {
         [SPORE]: {material: FIRE1, remain: true},
         [PLANT]: {material: FIRE1, remain: true},
         [MUSHROOM]: {material: FIRE1, remain: true},
+    },
+    [APHID]: {
+        [PLANT]: {material: APHID, chance: .1, remain: true},
     },
 };
 var EATS = {
@@ -145,6 +163,10 @@ function is_denser_or_equal(material1, material2) {
 
 function is_solid(material) {
     return SOLID.indexOf(material) >= 0;
+}
+
+function is_grippable(material) {
+    return GRIPPABLE.indexOf(material) >= 0;
 }
 
 function get_fall_dy(material) {

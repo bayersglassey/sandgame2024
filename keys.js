@@ -52,6 +52,8 @@ var SELECT = {
     u: MUSHROOM,
     i: SMOKE,
     o: STEAM,
+    p: APHID,
 
     f: SEEDSPOUT,
+    l: FLEA,
 };

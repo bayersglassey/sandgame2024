@@ -402,7 +402,7 @@ class SandGame {
         var pixel1 = this.get_pixel(x1, y1);
 
         var transforms = TRANSFORMS[pixel0] && TRANSFORMS[pixel0][pixel1];
-        if (transforms) {
+        if (transforms && (!transforms.chance || Math.random() < transforms.chance)) {
             // E.g. pixel0 is WATER and pixel1 is SEED
             var sun = this.sun[y1 * this.width + x1];
             if (
@@ -492,6 +492,8 @@ class SandGame {
                     // Wind disappears when it hits something it can't push
                     this.pixels[i] = NOTHING;
                 }
+                // Don't do anything more with this pixel if it moved!
+                if (this.pixels[i] !== material) continue;
             } else if (material === RAIN) {
                 var dx = this.wind_dx;
                 if (!this.move_pixel(x, y, x + dx, y + 1, true)) {
@@ -499,10 +501,9 @@ class SandGame {
                     // than itself
                     this.pixels[i] = WATER;
                 }
+                // Don't do anything more with this pixel if it moved!
+                if (this.pixels[i] !== material) continue;
             }
-
-            // Don't do anything more with this pixel if it moved!
-            if (this.pixels[i] !== material) continue;
 
             var dy = 0;
             if (does_waft(material)) {
@@ -514,14 +515,34 @@ class SandGame {
             }
 
             // Falling/wafting physics
+            var supported = false;
             if (dy) {
+                var xm1 = this.get_pixel(x - 1, y);
+                var xp1 = this.get_pixel(x + 1, y);
+                var xm1mdy = this.get_pixel(x - 1, y - dy);
+                var xp1mdy = this.get_pixel(x + 1, y - dy);
+                var xm1pdy = this.get_pixel(x - 1, y + dy);
+                var xp1pdy = this.get_pixel(x + 1, y + dy);
+                var mdy = this.get_pixel(x, y - dy);
+                var pdy = this.get_pixel(x, y + dy);
+                var sticks = STICKS[material];
                 var supported = (
                     (
-                        supports(this.get_pixel(x - 1, y), material) &&
-                        supports(this.get_pixel(x + 1, y), material)
+                        supports(xm1, material) &&
+                        supports(xp1, material)
                     ) ||
-                    supports(this.get_pixel(x - 1, y - dy), material) ||
-                    supports(this.get_pixel(x + 1, y - dy), material)
+                    supports(xm1mdy, material) ||
+                    supports(xp1mdy, material) ||
+                    sticks && (!sticks.chance || Math.random() < sticks.chance) && (
+                        is_grippable(xm1) ||
+                        is_grippable(xp1) ||
+                        is_grippable(xm1mdy) ||
+                        is_grippable(xp1mdy) ||
+                        is_grippable(xm1pdy) ||
+                        is_grippable(xp1pdy) ||
+                        is_grippable(mdy) ||
+                        is_grippable(pdy)
+                    )
                 );
                 if (supported) {
                     // Don't fall!
@@ -538,10 +559,17 @@ class SandGame {
                         }
                     }
                 }
+                // Don't do anything more with this pixel if it moved!
+                if (this.pixels[i] !== material) continue;
             }
 
-            // Don't do anything more with this pixel if it moved!
-            if (this.pixels[i] !== material) continue;
+            // Crawling, uh, physics
+            var crawls = CRAWLS[material];
+            if (crawls && (crawls.jumps || supported) && Math.random() < crawls.chance) {
+                var dx = Math.random() < .5? 1: -1;
+                var dy = Math.random() < .5? 1: -1;
+                if (this.move_pixel(x, y, x + dx, y + dy, false)) continue;
+            }
 
             // Fluid physics
             if (is_fluid(material)) {
@@ -555,10 +583,9 @@ class SandGame {
                         // We jiggled to the right
                     }
                 }
+                // Don't do anything more with this pixel if it moved!
+                if (this.pixels[i] !== material) continue;
             }
-
-            // Don't do anything more with this pixel if it moved!
-            if (this.pixels[i] !== material) continue;
 
             // Spouting physics
             if (SPOUTS[material] && Math.random() < .05) {
