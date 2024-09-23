@@ -1,4 +1,13 @@
 
+* Look into fullscreen!
+    * https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen
+    * I tried it, i.e. canvas.requestFullscreen(), and it worked but then the
+      pointer coordinates were off.
+      Currently we're using event.offsetX, event.offsetY for all pointer events
+      to update our pointer_x, pointer_y.
+
+* Make the map wrap horizontally (possibly optionally)
+
 * Materials
     * Add a Material class, instead of separate global structures like DENSITY etc
     * Wind (pushes things sideways, maybe similar to how Person pushes)
@@ -48,3 +57,9 @@
     * Heat/cold/wetness/hunger/etc of person.
       Each level can specify the temperature of its sun at each of the 4
       stages of the day.
+    * Evaporation!.. times of day have associated heats in light/shade.
+      When water is in light at a certain heat, it can randomly become steam.
+      Steam is like smoke: a rising fluid. It doubles as a "cloud".
+      Rain cloud: like steam, but changes steam it touches into more rain cloud,
+      and eventually dissolves as rain.
+    * Wind which picks up sand & makes it a fluid for a bit.

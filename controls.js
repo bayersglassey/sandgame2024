@@ -22,7 +22,7 @@ function create_material_elems() {
             span.className = 'material';
             span.textContent = key;
             span.style.background = css_material(material);
-            span.onmousedown = function(event) {
+            span.onpointerdown = function(event) {
                 var span = event.target;
                 var material = Number(span.getAttribute('data-material'));
                 window.game.select_material(material);

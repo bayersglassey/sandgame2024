@@ -87,9 +87,9 @@ class SandGame {
         this.wind_dx = 1; // can be +/- 1
 
         this.keydown = {};
-        this.mousedown = false;
-        this.mouse_x = 0;
-        this.mouse_y = 0;
+        this.pointerdown = false;
+        this.pointer_x = 0;
+        this.pointer_y = 0;
 
         this.selected_material = null;
         this.adding_portal = false;
@@ -102,9 +102,9 @@ class SandGame {
         canvas.style.height = height * zoom;
         window.addEventListener('keydown', this.onkeydown.bind(this));
         window.addEventListener('keyup', this.onkeyup.bind(this));
-        canvas.addEventListener('mousedown', this.onmousedown.bind(this));
-        window.addEventListener('mouseup', this.onmouseup.bind(this));
-        canvas.addEventListener('mousemove', this.onmousemove.bind(this));
+        canvas.addEventListener('pointerdown', this.onpointerdown.bind(this));
+        window.addEventListener('pointerup', this.onpointerup.bind(this));
+        canvas.addEventListener('pointermove', this.onpointermove.bind(this));
 
         // We will randomly shuffle this array each step, and use it to
         // decide in what order to process pixels
@@ -185,53 +185,59 @@ class SandGame {
         this.keydown[event.keyCode] = false;
         for (var person of this.people) person.onkeyup(event.keyCode);
     }
-    onmousedown(event) {
+    onpointerdown(event) {
         if (event.button !== 0) return;
-        this.set_mouse(event);
+
+        // Capture the pointer!
+        // See also: https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events#capturing_the_pointer
+        // TODO: should we add CSS "touch-action: none" to the canvas?..
+        this.canvas.setPointerCapture(event.pointerId);
+
+        this.set_pointer(event);
         if (this.adding_portal) {
             var portal_image_input = document.getElementById('portal_image_input');
             var image_url = portal_image_input.value || null;
             var w = DEFAULT_PORTAL_WIDTH;
             var h = DEFAULT_PORTAL_HEIGHT;
             this.add_portal(
-                this.mouse_x - Math.floor(w / 2),
-                this.mouse_y - Math.floor(h / 2),
+                this.pointer_x - Math.floor(w / 2),
+                this.pointer_y - Math.floor(h / 2),
                 w, h, image_url);
             this.adding_portal = false;
         } else if (this.moving_person) {
             if (
-                this.mouse_x >= 0 && this.mouse_x < this.width &&
-                this.mouse_y >= 0 && this.mouse_y < this.height
+                this.pointer_x >= 0 && this.pointer_x < this.width &&
+                this.pointer_y >= 0 && this.pointer_y < this.height
             ) {
                 var person = this.people[0];
                 person.clear_pixels();
-                person.x = this.mouse_x;
-                person.y = this.mouse_y;
+                person.x = this.pointer_x;
+                person.y = this.pointer_y;
                 this.moving_person = false;
             }
         } else {
-            this.mousedown = true;
+            this.pointerdown = true;
             this.dropstuff();
         }
     }
-    onmouseup(event) {
+    onpointerup(event) {
         if (event.button !== 0) return;
-        this.mousedown = false;
+        this.pointerdown = false;
     }
-    onmousemove(event) {
-        this.set_mouse(event);
-        if (this.mousedown) this.dropstuff();
+    onpointermove(event) {
+        this.set_pointer(event);
+        if (this.pointerdown) this.dropstuff();
     }
-    set_mouse(event) {
-        this.mouse_x = Math.floor(event.offsetX / this.zoom);
-        this.mouse_y = Math.floor(event.offsetY / this.zoom);
+    set_pointer(event) {
+        this.pointer_x = Math.floor(event.offsetX / this.zoom);
+        this.pointer_y = Math.floor(event.offsetY / this.zoom);
     }
 
     dropstuff() {
         if (!EDITOR_MODE) return;
 
-        var mx = this.mouse_x, x0 = mx, x1 = mx;
-        var my = this.mouse_y, y0 = my, y1 = my;
+        var mx = this.pointer_x, x0 = mx, x1 = mx;
+        var my = this.pointer_y, y0 = my, y1 = my;
 
         if (!this.keydown[KEYCODE_CONTROL]) {
             x0 -= 3;
@@ -444,7 +450,7 @@ class SandGame {
         var timer = this.step_timer;
         timer.start();
 
-        if (this.mousedown) { this.dropstuff(); }
+        if (this.pointerdown) { this.dropstuff(); }
         timer.mark('dropstuff');
 
         // Tick... tick... tick...
