@@ -7,6 +7,9 @@ run around inside the simulation.
 
 You can play it at: https://bayersglassey.github.io/sandgame2024/
 
+It looks a bit like this:
+![screenshot](sandgame.png)
+
 This game is still in a very "alpha" stage.
 See the [TODO](./TODO) for what's going to happen next.
 
