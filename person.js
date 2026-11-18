@@ -93,6 +93,7 @@ class Person {
             }
             if (y < 0 || y >= height) return true;
             var i = y * width + x;
+            if (is_climbable(pixels[i])) continue;
             if (is_solid(pixels[i])) return true;
         }
         return false;

@@ -56,4 +56,5 @@ var SELECT = {
 
     f: SEEDSPOUT,
     l: FLEA,
+    d: DOOR,
 };

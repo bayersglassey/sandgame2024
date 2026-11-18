@@ -16,6 +16,7 @@ var HOLE = rgb(60, 60, 60);
 var SKIN = rgb(255, 150, 180);
 var CLOTHES = rgb(120, 80, 40);
 var WOOD = rgb(255, 125, 125);
+var DOOR = rgb(255, 125, 255);
 var GLASS = rgba(180, 180, 225, 130);
 var SEED = rgb(170, 230, 70);
 var PLANT = rgb(70, 200, 70);
@@ -41,6 +42,7 @@ var DENSITY = {
     [OILSPOUT]: 99,
     [HOLE]: 9,
     [WOOD]: 9,
+    [DOOR]: 9,
     [GLASS]: 99,
     [SEED]: 9,
     [PLANT]: 9,
@@ -64,6 +66,7 @@ var SOLID = [
     SKIN,
     CLOTHES,
     WOOD,
+    DOOR,
     GLASS,
     SEED,
     PLANT,
@@ -71,6 +74,9 @@ var SOLID = [
     MUSHROOM,
     APHID,
     FLEA,
+];
+var CLIMBABLE = [
+    DOOR,
 ];
 var GRIPPABLE = [SAND, STONE, SANDSPOUT, WATERSPOUT, SKIN, CLOTHES, WOOD, SEED, PLANT, MUSHROOM];
 var FALLS = [SAND, WATER, OIL, HOLE, SEED, PLANT, SEEDSPOUT, MUSHROOM, APHID, FLEA];
@@ -115,6 +121,7 @@ var TRANSFORMS = {
     [FIRE1]: {
         [OIL]: {material: FIRE1, remain: true},
         [WOOD]: {material: FIRE1, remain: true},
+        [DOOR]: {material: FIRE1, remain: true},
         [SEED]: {material: FIRE1, remain: true},
         [SPORE]: {material: FIRE1, remain: true},
         [PLANT]: {material: FIRE1, remain: true},
@@ -123,6 +130,7 @@ var TRANSFORMS = {
     [FIRE2]: {
         [OIL]: {material: FIRE1, remain: true},
         [WOOD]: {material: FIRE1, remain: true},
+        [DOOR]: {material: FIRE1, remain: true},
         [SEED]: {material: FIRE1, remain: true},
         [SPORE]: {material: FIRE1, remain: true},
         [PLANT]: {material: FIRE1, remain: true},
@@ -163,6 +171,10 @@ function is_denser_or_equal(material1, material2) {
 
 function is_solid(material) {
     return SOLID.indexOf(material) >= 0;
+}
+
+function is_climbable(material) {
+    return CLIMBABLE.indexOf(material) >= 0;
 }
 
 function is_grippable(material) {
